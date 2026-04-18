@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+data/
+checkpoints/
+*.pdb
+*.pt
+*.onnx
+*.tflite
+.ipynb_checkpoints/
