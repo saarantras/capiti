@@ -1,0 +1,19 @@
+name: capiti-fold
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pytorch=2.3.*
+  - pytorch-cuda=12.1
+  - numpy
+  - scipy
+  - biopython
+  - tqdm
+  - pip
+  - pip:
+      - transformers==4.46.3
+      - accelerate
+      - safetensors
+      - sentencepiece

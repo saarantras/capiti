@@ -2,10 +2,15 @@ __pycache__/
 *.pyc
 .venv/
 .env
+.envs/
+.cache/
+logs/
+data
 data/
 checkpoints/
 *.pdb
 *.pt
 *.onnx
 *.tflite
+!tracked_data/**
 .ipynb_checkpoints/

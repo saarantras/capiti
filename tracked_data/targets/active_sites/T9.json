@@ -1,0 +1,93 @@
+{
+  "target": "T9",
+  "pdb": "1LKP",
+  "chain": "A",
+  "uniprot": "P24931",
+  "features": [
+    {
+      "type": "Binding site",
+      "unp_start": 20,
+      "unp_end": 20,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 53,
+      "unp_end": 53,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 53,
+      "unp_end": 53,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 94,
+      "unp_end": 94,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 97,
+      "unp_end": 97,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 128,
+      "unp_end": 128,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 128,
+      "unp_end": 128,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 131,
+      "unp_end": 131,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 158,
+      "unp_end": 158,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 161,
+      "unp_end": 161,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 174,
+      "unp_end": 174,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 177,
+      "unp_end": 177,
+      "description": ""
+    }
+  ],
+  "fixed_positions_pdb": [
+    20,
+    53,
+    94,
+    97,
+    128,
+    131,
+    158,
+    161,
+    174,
+    177
+  ],
+  "notes": ""
+}

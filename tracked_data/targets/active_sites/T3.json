@@ -1,0 +1,45 @@
+{
+  "target": "T3",
+  "pdb": "3HBR",
+  "chain": "A",
+  "uniprot": "Q6XEC0",
+  "features": [
+    {
+      "type": "Active site",
+      "unp_start": 70,
+      "unp_end": 70,
+      "description": "Acyl-ester intermediate"
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 70,
+      "unp_end": 70,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 73,
+      "unp_end": 73,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 118,
+      "unp_end": 118,
+      "description": ""
+    },
+    {
+      "type": "Binding site",
+      "unp_start": 250,
+      "unp_end": 250,
+      "description": ""
+    }
+  ],
+  "fixed_positions_pdb": [
+    70,
+    73,
+    118,
+    250
+  ],
+  "notes": ""
+}
