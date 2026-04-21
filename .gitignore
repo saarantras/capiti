@@ -5,6 +5,7 @@ __pycache__/
 .envs/
 .cache/
 logs/
+third_party/
 data
 data/
 checkpoints/
@@ -12,5 +13,4 @@ checkpoints/
 *.pt
 *.onnx
 *.tflite
-!tracked_data/**
 .ipynb_checkpoints/

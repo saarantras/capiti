@@ -1,0 +1,90 @@
+# v1 run configuration.
+#
+# Reference set of hyperparameters for the first end-to-end feasibility
+# pass. Captures exactly what was run, so later configs (v2, ablations) can
+# diff against this. Not auto-loaded by train.py; invocation lives in
+# scripts/sbatch_train.sh.
+
+name: v1
+
+targets: configs/targets.tsv        # 9 soluble enzymes
+
+# ----- variant generation -----
+mpnn:
+  weights: soluble                   # v_48_020 (0.2 noise)
+  num_per_temp: 500
+  temps: [0.1, 0.3]
+  seed: 42
+  batch_size: 1                      # see known env quirk in configs/envs/README.md
+
+negatives:
+  ala_scan_per_wt: 50                # effectively capped by #fixed positions
+  ala_scan_of_mpnn: 100              # one random fixed-position ala mutation applied to each of N MPNN designs
+  combined_ko_n: 200                 # WT-all-ala + WT-charge-flip + 200 MPNN-bg all-ala
+  scramble_n: 300
+  perturb30_n: 300
+  seed: 42
+
+decoys:
+  family:
+    source: UniProt Pfam families of each target's UniProt accession
+    max_per_family: 600
+    id_cutoff: 0.70                  # drop near-WT hits as likely positives
+  random:
+    source: reviewed SwissProt
+    n: 2000
+
+# ----- dataset assembly -----
+dataset:
+  min_len: 30
+  max_len: 800
+  split: {train: 0.80, val: 0.10, test: 0.10}
+  stratify_by: [target, class]
+  seed: 42
+
+# ----- model -----
+model:
+  arch: CapitiCNN
+  vocab: 22                          # PAD + 20 AA + X
+  embed_dim: 32
+  channels: 64
+  num_blocks: 5
+  kernel_size: 5
+  dilations: [1, 2, 4, 8, 16]
+  dropout: 0.1
+  num_classes: 10                    # 9 targets + "none"
+  params: 219146                     # realised param count
+
+# ----- training -----
+train:
+  epochs: 15
+  batch_size: 64
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  optimizer: AdamW
+  scheduler: CosineAnnealingLR
+  loss: CrossEntropyLoss
+  sampler: balanced_by_target_and_class
+  seed: 42
+
+# ----- v1 test-set results (for posterity) -----
+results:
+  test_binary_auc: 0.985
+  test_binary_prauc: 0.971
+  test_acc10: 0.963
+  per_class_acc:
+    mpnn_positive: 0.996             # positives retained
+    scramble: 1.000
+    random_decoy: 1.000
+    family_decoy: 1.000              # the demo: rejects same-family homologs
+    perturb30: 0.993
+    combined_ko: 0.994               # fold preserved, function broken -> negative
+    ala_scan: 0.212                  # weak spot -- single-residue KO fools the model
+
+notes: |
+  v1 feasibility pass succeeded on all classes except single-residue
+  active-site knockouts (ala_scan). v2 should address this via one or
+  more of:
+    - heavy oversampling of ala_scan
+    - auxiliary per-residue active-site prediction head
+    - contrastive pairing: matched (mpnn_positive, its ala_scan) batches

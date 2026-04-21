@@ -41,11 +41,8 @@ def main():
     print(f"device={device}", flush=True)
 
     tok = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
-    model = EsmForProteinFolding.from_pretrained(
-        "facebook/esmfold_v1", torch_dtype=torch.float16 if device == "cuda" else torch.float32
-    )
+    model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
     model = model.to(device)
-    model.esm = model.esm.half() if device == "cuda" else model.esm
     model.trunk.set_chunk_size(args.chunk_size)
     model.eval()
 
