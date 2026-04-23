@@ -9,6 +9,11 @@ Weighs ~1 MB on disk, runs inference in tens of milliseconds on a
 Raspberry Pi. Trained by distilling ProteinMPNN's function-preserving
 design prior into a small 1D CNN.
 
+![CapitiCNN architecture](docs/capiti.arch.svg)
+
+See [`docs/capiti.summary.txt`](docs/capiti.summary.txt) for the full
+per-layer size / FLOP table.
+
 ## Install
 
 ```

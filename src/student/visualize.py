@@ -11,7 +11,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-len", type=int, default=800)
     ap.add_argument("--channels", type=int, default=64)
-    ap.add_argument("--out-dir", default="data/runs/v1")
+    ap.add_argument("--out-dir", default="docs")
     ap.add_argument("--fmt", default="svg", choices=["svg", "png", "pdf"])
     args = ap.parse_args()
 
