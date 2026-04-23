@@ -6,6 +6,7 @@
 # scripts/sbatch_train.sh.
 
 name: v1
+codename: Ab9         # first release built on 9 reference enzymes
 
 targets: configs/targets.tsv        # 9 soluble enzymes
 

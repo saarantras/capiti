@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""capiti: run the in-set/not-in-set classifier on a nucleotide sequence.
+
+Usage:
+    capiti <nt_sequence> [--cutoff 0.5] [--model capiti.onnx] [-v]
+    capiti --fasta seqs.fa [--cutoff 0.5] [--model capiti.onnx] [-v]
+    echo ATGCGT... | capiti --stdin
+
+Exit code 0 on TRUE, 1 on FALSE (for shell pipelines). With --fasta, the
+exit code is 0 if at least one sequence is TRUE.
+
+Pi install:
+    pip install onnxruntime numpy
+"""
+import argparse, json, os, pathlib, sys
+
+
+# Standard genetic code (codon -> single-letter AA; * is stop).
+CODONS = {
+    'TTT':'F','TTC':'F','TTA':'L','TTG':'L','CTT':'L','CTC':'L','CTA':'L','CTG':'L',
+    'ATT':'I','ATC':'I','ATA':'I','ATG':'M','GTT':'V','GTC':'V','GTA':'V','GTG':'V',
+    'TCT':'S','TCC':'S','TCA':'S','TCG':'S','CCT':'P','CCC':'P','CCA':'P','CCG':'P',
+    'ACT':'T','ACC':'T','ACA':'T','ACG':'T','GCT':'A','GCC':'A','GCA':'A','GCG':'A',
+    'TAT':'Y','TAC':'Y','TAA':'*','TAG':'*','CAT':'H','CAC':'H','CAA':'Q','CAG':'Q',
+    'AAT':'N','AAC':'N','AAA':'K','AAG':'K','GAT':'D','GAC':'D','GAA':'E','GAG':'E',
+    'TGT':'C','TGC':'C','TGA':'*','TGG':'W','CGT':'R','CGC':'R','CGA':'R','CGG':'R',
+    'AGT':'S','AGC':'S','AGA':'R','AGG':'R','GGT':'G','GGC':'G','GGA':'G','GGG':'G',
+}
+
+
+def translate(nt):
+    nt = "".join(nt.upper().split()).replace("U", "T")
+    aa = []
+    for i in range(0, len(nt) - 2, 3):
+        c = nt[i:i+3]
+        if len(c) < 3:
+            break
+        r = CODONS.get(c, "X")
+        if r == "*":
+            break
+        aa.append(r)
+    return "".join(aa)
+
+
+def encode(seq, aa_to_idx, pad_idx, max_len):
+    x = max_len * [pad_idx]
+    for i, c in enumerate(seq[:max_len]):
+        x[i] = aa_to_idx.get(c, aa_to_idx.get("X", pad_idx))
+    return x
+
+
+def softmax(x):
+    import numpy as np
+    x = x - x.max(axis=-1, keepdims=True)
+    e = np.exp(x)
+    return e / e.sum(axis=-1, keepdims=True)
+
+
+def read_fasta(path):
+    name, buf = None, []
+    for line in open(path):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith(">"):
+            if name is not None:
+                yield name, "".join(buf)
+            name = line[1:].split()[0]
+            buf = []
+        else:
+            buf.append(line)
+    if name is not None:
+        yield name, "".join(buf)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("sequence", nargs="?", help="nucleotide sequence (ACGT[U])")
+    ap.add_argument("--fasta", help="read nucleotide sequences from FASTA")
+    ap.add_argument("--stdin", action="store_true", help="read one sequence from stdin")
+    ap.add_argument("--cutoff", type=float, default=0.5,
+                    help="probability threshold for TRUE (default 0.5)")
+    ap.add_argument("--model",
+                    default=os.environ.get("CAPITI_MODEL", "capiti.onnx"),
+                    help="path to .onnx model (env: CAPITI_MODEL)")
+    ap.add_argument("--meta",
+                    help="path to .meta.json (default: <model>.meta.json "
+                         "or <model stem>.meta.json)")
+    ap.add_argument("-v", "--verbose", action="store_true")
+    ap.add_argument("--which", action="store_true",
+                    help="also report argmax class (T1..T9 or none)")
+    args = ap.parse_args()
+
+    # resolve meta path
+    model_path = pathlib.Path(args.model)
+    if args.meta:
+        meta_path = pathlib.Path(args.meta)
+    else:
+        # try <model>.meta.json or stem + .meta.json
+        cand = [model_path.with_suffix(".meta.json"),
+                model_path.parent / (model_path.stem + ".meta.json")]
+        meta_path = next((p for p in cand if p.exists()), cand[0])
+    if not model_path.exists():
+        sys.exit(f"model not found: {model_path}")
+    if not meta_path.exists():
+        sys.exit(f"meta not found: {meta_path}")
+
+    meta = json.loads(meta_path.read_text())
+    max_len = meta["max_len"]
+    aa_to_idx = meta["vocab"]
+    pad_idx = aa_to_idx.get("pad", 0)
+    labels = meta["labels"]
+    none_idx = meta["none_idx"]
+
+    # lazy imports so --help works without numpy/ort
+    import numpy as np
+    import onnxruntime as ort
+    sess = ort.InferenceSession(str(model_path),
+                                 providers=["CPUExecutionProvider"])
+    inp_name = sess.get_inputs()[0].name
+
+    # gather sequences
+    items = []  # (name, nt)
+    if args.fasta:
+        items = list(read_fasta(args.fasta))
+    elif args.stdin:
+        items = [("stdin", sys.stdin.read().strip())]
+    elif args.sequence:
+        items = [("seq", args.sequence)]
+    else:
+        ap.error("provide a sequence, --fasta, or --stdin")
+
+    # translate + encode
+    toks = []
+    metas = []  # per-row display
+    for name, nt in items:
+        aa = translate(nt)
+        ids = encode(aa, aa_to_idx, pad_idx, max_len)
+        toks.append(ids)
+        metas.append((name, nt, aa))
+    x = np.asarray(toks, dtype=np.int64)
+
+    logits = sess.run(None, {inp_name: x})[0]  # (N, C)
+    probs = softmax(logits)
+    inset = 1.0 - probs[:, none_idx]
+    top = probs.argmax(axis=-1)
+
+    any_true = False
+    for (name, nt, aa), p_inset, top_idx in zip(metas, inset, top):
+        is_true = p_inset >= args.cutoff
+        any_true = any_true or bool(is_true)
+        flag = "TRUE" if is_true else "FALSE"
+        if args.verbose or args.fasta:
+            extra = f"  p_inset={p_inset:.3f}"
+            if args.which:
+                extra += f"  top={labels[top_idx]}  p_top={probs[top_idx]:.3f}" if False else \
+                         f"  top={labels[top_idx]}"
+            if args.fasta:
+                print(f">{name}\t{flag}{extra}")
+            else:
+                print(f"{flag}{extra}")
+        else:
+            print(flag)
+
+    sys.exit(0 if any_true else 1)
+
+
+if __name__ == "__main__":
+    main()

@@ -14,3 +14,11 @@ checkpoints/
 *.onnx
 *.tflite
 .ipynb_checkpoints/
+
+# python packaging
+build/
+dist/
+*.egg-info/
+
+# bundled model should be tracked despite *.onnx above
+!capiti/_model/capiti.onnx

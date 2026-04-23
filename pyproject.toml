@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "capiti"
+version = "0.0.2"
+description = "Tiny protein-function classifier distilled from ProteinMPNN, for edge deployment."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "Mackenzie Noon", email = "mackenzie.noon@yale.edu" },
+]
+keywords = [
+  "protein", "bioinformatics", "enzyme", "classifier", "onnx",
+  "edge", "raspberry-pi", "proteinmpnn",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "numpy",
+  "onnxruntime >= 1.15",
+]
+
+[project.urls]
+Homepage = "https://github.com/mcnoonz/capiti"
+
+[project.scripts]
+capiti = "capiti.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+include = ["capiti*"]
+exclude = ["src*", "tests*", "third_party*", "scripts*", "data*", "notebooks*", "configs*", "logs*"]
+
+[tool.setuptools.package-data]
+capiti = ["_model/*.onnx", "_model/*.json"]
