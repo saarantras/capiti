@@ -1,0 +1,14 @@
+name: capiti-baselines
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.10
+  - blast
+  - scikit-learn
+  - onnxruntime
+  - matplotlib
+  - pandas
+  - numpy
+  - biopython
+  - tqdm

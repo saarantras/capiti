@@ -1,0 +1,210 @@
+{
+  "capiti": {
+    "binary_auc": 0.9848706377858003,
+    "binary_prauc": 0.9723529202303021,
+    "threshold": 0.8128275275230408,
+    "overall_acc": 0.9676294820717132,
+    "tpr": 0.99,
+    "fpr": 0.05054151624548736,
+    "per_class": {
+      "mpnn_positive": {
+        "n": 900,
+        "acc": 0.99,
+        "mean_score": 0.9699035598834356,
+        "median_score": 0.9799764752388
+      },
+      "ala_scan": {
+        "n": 85,
+        "acc": 0.36470588235294116,
+        "mean_score": 0.7337163273025962,
+        "median_score": 0.9271364212036133
+      },
+      "combined_ko": {
+        "n": 161,
+        "acc": 0.9937888198757764,
+        "mean_score": 0.009575219258018162,
+        "median_score": 0.0018581151962280273
+      },
+      "scramble": {
+        "n": 270,
+        "acc": 1.0,
+        "mean_score": 0.000597256201284903,
+        "median_score": 3.999471664428711e-05
+      },
+      "perturb30": {
+        "n": 270,
+        "acc": 0.9962962962962963,
+        "mean_score": 0.01400126196719982,
+        "median_score": 0.00012177228927612305
+      },
+      "family_decoy": {
+        "n": 165,
+        "acc": 1.0,
+        "mean_score": 0.0034674716718269116,
+        "median_score": 0.00011837482452392578
+      },
+      "random_decoy": {
+        "n": 157,
+        "acc": 1.0,
+        "mean_score": 0.00183906069227085,
+        "median_score": 8.7738037109375e-05
+      }
+    }
+  },
+  "blast_nearest_wt": {
+    "binary_auc": 0.6965678900922584,
+    "binary_prauc": 0.5430128117264963,
+    "threshold": 818.8502197265625,
+    "overall_acc": 0.5239043824701195,
+    "tpr": 0.0,
+    "fpr": 0.05054151624548736,
+    "per_class": {
+      "mpnn_positive": {
+        "n": 900,
+        "acc": 0.0,
+        "mean_score": 318.7,
+        "median_score": 258.0
+      },
+      "ala_scan": {
+        "n": 85,
+        "acc": 0.9529411764705882,
+        "mean_score": 363.8705882352941,
+        "median_score": 293.0
+      },
+      "combined_ko": {
+        "n": 161,
+        "acc": 0.9937888198757764,
+        "mean_score": 319.1304347826087,
+        "median_score": 258.0
+      },
+      "scramble": {
+        "n": 270,
+        "acc": 1.0,
+        "mean_score": 18.777037143707275,
+        "median_score": 19.200000762939453
+      },
+      "perturb30": {
+        "n": 270,
+        "acc": 0.8111111111111111,
+        "mean_score": 462.81481481481484,
+        "median_score": 354.0
+      },
+      "family_decoy": {
+        "n": 165,
+        "acc": 1.0,
+        "mean_score": 85.05454546610514,
+        "median_score": 48.5
+      },
+      "random_decoy": {
+        "n": 157,
+        "acc": 1.0,
+        "mean_score": 18.37770705617917,
+        "median_score": 18.899999618530273
+      }
+    }
+  },
+  "kmer3_nn": {
+    "binary_auc": 0.6222392699558765,
+    "binary_prauc": 0.4701407218616326,
+    "threshold": 0.49217772483825684,
+    "overall_acc": 0.5239043824701195,
+    "tpr": 0.0,
+    "fpr": 0.05054151624548736,
+    "per_class": {
+      "mpnn_positive": {
+        "n": 900,
+        "acc": 0.0,
+        "mean_score": 0.2471114342990849,
+        "median_score": 0.27219411730766296
+      },
+      "ala_scan": {
+        "n": 85,
+        "acc": 0.9058823529411765,
+        "mean_score": 0.3201570749282837,
+        "median_score": 0.27609196305274963
+      },
+      "combined_ko": {
+        "n": 161,
+        "acc": 0.9875776397515528,
+        "mean_score": 0.24150172264679617,
+        "median_score": 0.23846149444580078
+      },
+      "scramble": {
+        "n": 270,
+        "acc": 1.0,
+        "mean_score": 0.106247553118953,
+        "median_score": 0.09974705055356026
+      },
+      "perturb30": {
+        "n": 270,
+        "acc": 0.8296296296296296,
+        "mean_score": 0.44571079512437184,
+        "median_score": 0.43938814103603363
+      },
+      "family_decoy": {
+        "n": 165,
+        "acc": 1.0,
+        "mean_score": 0.11405064734545621,
+        "median_score": 0.10201328992843628
+      },
+      "random_decoy": {
+        "n": 157,
+        "acc": 1.0,
+        "mean_score": 0.08796030800243851,
+        "median_score": 0.08654478192329407
+      }
+    }
+  },
+  "kmer3_lr": {
+    "binary_auc": 0.9810008022462896,
+    "binary_prauc": 0.9631274070445415,
+    "threshold": 0.7371371437117703,
+    "overall_acc": 0.9422310756972112,
+    "tpr": 0.9333333333333333,
+    "fpr": 0.05054151624548736,
+    "per_class": {
+      "mpnn_positive": {
+        "n": 900,
+        "acc": 0.9333333333333333,
+        "mean_score": 0.8783117385170193,
+        "median_score": 0.8950068681303225
+      },
+      "ala_scan": {
+        "n": 85,
+        "acc": 0.3411764705882353,
+        "mean_score": 0.724630043639564,
+        "median_score": 0.8009031968306585
+      },
+      "combined_ko": {
+        "n": 161,
+        "acc": 1.0,
+        "mean_score": 0.19099780494850507,
+        "median_score": 0.16370933614894725
+      },
+      "scramble": {
+        "n": 270,
+        "acc": 1.0,
+        "mean_score": 0.01654894837921473,
+        "median_score": 0.013776397688515329
+      },
+      "perturb30": {
+        "n": 270,
+        "acc": 1.0,
+        "mean_score": 0.02607209174022359,
+        "median_score": 0.021354494058041802
+      },
+      "family_decoy": {
+        "n": 165,
+        "acc": 1.0,
+        "mean_score": 0.031458054079113285,
+        "median_score": 0.02452047831738295
+      },
+      "random_decoy": {
+        "n": 157,
+        "acc": 1.0,
+        "mean_score": 0.02872419949778007,
+        "median_score": 0.01884884201380483
+      }
+    }
+  }
+}

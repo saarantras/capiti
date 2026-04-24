@@ -1,11 +1,18 @@
 # Environments
 
-One conda env drives the whole project: folding oracle, variant generation,
-and student training all live in `capiti-fold` (file: `esmfold.yml`,
-install path: `.envs/esmfold`). Name kept for backwards compatibility;
-"capiti" is accurate now.
+Two conda envs:
 
-## What it runs
+- `capiti-fold` (`esmfold.yml`, install path `.envs/esmfold`) — folding
+  oracle, variant generation, student training. Name kept for backwards
+  compatibility; "capiti" is accurate now.
+- `capiti-baselines` (`baselines.yml`, install path `.envs/baselines`) —
+  BLAST + k-mer baselines and the benchmark pipeline in `src/eval/`.
+  Kept separate from `capiti-fold` so its torch/CUDA pins stay untouched
+  by bioconda `blast` and its glibc-sensitive deps.
+
+## capiti-fold
+
+### What it runs
 
 - **ESMFold oracle** (`src/oracle/`). HuggingFace `transformers`
   `EsmForProteinFolding`, which sidesteps the openfold CUDA-extension
@@ -17,7 +24,7 @@ install path: `.envs/esmfold`). Name kept for backwards compatibility;
 - **Data assembly and decoy fetch** (`src/data/`). Stdlib only for
   fetch_*; numpy for assemble_dataset.
 
-## Install
+### Install
 
 Run on a login node or CPU allocation with internet:
 
@@ -93,3 +100,44 @@ since all v1 targets are soluble proteins.
   ~9 GB VRAM on H200, well within the 143 GB card.
 - ProteinMPNN's `--batch_size > --num_seq_per_target` silently emits zero
   designs. Keep `batch_size=1` (or <= num_seq_per_target).
+
+## capiti-baselines
+
+Drives `src/eval/` (BLAST + k-mer baselines, CapitiCNN ONNX scoring,
+benchmark plots). CPU-only; no CUDA pin, no torch. Spec is
+`baselines.yml`:
+
+- `python=3.10`, `blast` (NCBI BLAST+ from bioconda), `scikit-learn`,
+  `onnxruntime`, `matplotlib`, `pandas`, `numpy`, `biopython`, `tqdm`.
+
+### Install
+
+```
+module load miniconda
+mamba env create -f configs/envs/baselines.yml \
+    -p $HOME/project_pi_skr2/mcn26/capiti/.envs/baselines
+```
+
+### Activate
+
+```
+module load miniconda
+set +u
+source /apps/software/system/software/miniconda/24.11.3/etc/profile.d/conda.sh
+conda activate $HOME/project_pi_skr2/mcn26/capiti/.envs/baselines
+set -u
+```
+
+### Run the benchmark
+
+```
+python -m src.eval.benchmark \
+    --dataset data/dataset/dataset.tsv \
+    --targets data/targets/primary_sequences \
+    --capiti-onnx data/runs/v1/capiti.onnx \
+    --capiti-meta data/runs/v1/capiti.meta.json \
+    --out-dir data/runs/v1/benchmark
+```
+
+Writes `scores.tsv`, `metrics.json`, `thresholds.json`, `report.md`, and
+ROC / PR / per-class / score-distribution / delta plots to `--out-dir`.
