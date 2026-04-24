@@ -135,6 +135,17 @@ def main():
     ap.add_argument("--k", type=int, default=3, help="k-mer size")
     ap.add_argument("--skip", nargs="*", default=[],
                     help="method names to skip, e.g. --skip kmer_lr blast")
+    ap.add_argument("--gate", action="store_true",
+                    help="also report a gated capiti variant that zeros "
+                         "the score when the model's predicted target "
+                         "has a mutated active-site residue (uses SIFTS "
+                         "residue maps to check both WT and MPNN "
+                         "coordinate systems)")
+    ap.add_argument("--active-sites", default="data/targets/active_sites")
+    ap.add_argument("--residue-maps", default="data/targets/residue_maps")
+    ap.add_argument("--gate-conf", type=float, default=0.2,
+                    help="min prob on predicted target for the gate to "
+                         "trigger (low-conf rows passed through)")
     args = ap.parse_args()
 
     out = Path(args.out_dir)
@@ -153,9 +164,26 @@ def main():
 
     if "capiti" not in args.skip:
         print(f"[benchmark] scoring {args.capiti_name} ...", file=sys.stderr)
-        score_cols[args.capiti_name] = _s.capiti_scores(
-            eval_rows, args.capiti_onnx, args.capiti_meta)
-        method_order.append(args.capiti_name)
+        if args.gate:
+            base, probs, labels = _s.capiti_scores(
+                eval_rows, args.capiti_onnx, args.capiti_meta,
+                return_probs=True)
+            score_cols[args.capiti_name] = base
+            method_order.append(args.capiti_name)
+            print("[benchmark] applying fixed-position gate ...",
+                  file=sys.stderr)
+            gate_mask = _s.load_gate_mask(args.active_sites,
+                                           args.residue_maps)
+            preds = _s.capiti_predicted_targets(probs, labels)
+            gated_name = f"{args.capiti_name}+gate"
+            score_cols[gated_name] = _s.apply_fixed_position_gate(
+                eval_rows, gate_mask, base, preds,
+                target_conf_min=args.gate_conf)
+            method_order.append(gated_name)
+        else:
+            score_cols[args.capiti_name] = _s.capiti_scores(
+                eval_rows, args.capiti_onnx, args.capiti_meta)
+            method_order.append(args.capiti_name)
 
     if "blast" not in args.skip:
         print("[benchmark] scoring blast_nearest_wt ...", file=sys.stderr)

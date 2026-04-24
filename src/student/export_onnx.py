@@ -17,11 +17,17 @@ def main():
     ap.add_argument("--max-len", type=int, default=800)
     ap.add_argument("--channels", type=int, default=64)
     ap.add_argument("--dropout", type=float, default=0.0)
+    ap.add_argument("--pool", choices=("mean", "mean_max"), default="mean")
     args = ap.parse_args()
 
-    model = CapitiCNN(channels=args.channels, dropout=args.dropout)
+    # Always build with use_aux=False (the aux head is training-only).
+    model = CapitiCNN(channels=args.channels, dropout=args.dropout,
+                      pool=args.pool, use_aux=False)
     sd = torch.load(args.ckpt, map_location="cpu")
-    model.load_state_dict(sd)
+    # strict=False so checkpoints trained with use_aux=True (which have
+    # aux_head.* keys) load cleanly, ignoring the aux weights we don't
+    # export.
+    model.load_state_dict(sd, strict=False)
     model.eval()
 
     dummy = torch.zeros((1, args.max_len), dtype=torch.long)

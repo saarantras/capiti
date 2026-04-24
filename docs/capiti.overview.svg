@@ -59,9 +59,9 @@
 <!-- pool -->
 <g id="node5" class="node">
 <title>pool</title>
-<path fill="#ffffff" stroke="#000000" d="M106.5,-172C106.5,-172 29.5,-172 29.5,-172 23.5,-172 17.5,-166 17.5,-160 17.5,-160 17.5,-148 17.5,-148 17.5,-142 23.5,-136 29.5,-136 29.5,-136 106.5,-136 106.5,-136 112.5,-136 118.5,-142 118.5,-148 118.5,-148 118.5,-160 118.5,-160 118.5,-166 112.5,-172 106.5,-172"/>
-<text text-anchor="middle" x="68" y="-157" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">Masked Mean Pool</text>
-<text text-anchor="middle" x="68" y="-146" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">over length</text>
+<path fill="#ffffff" stroke="#000000" d="M121.5,-172C121.5,-172 14.5,-172 14.5,-172 8.5,-172 2.5,-166 2.5,-160 2.5,-160 2.5,-148 2.5,-148 2.5,-142 8.5,-136 14.5,-136 14.5,-136 121.5,-136 121.5,-136 127.5,-136 133.5,-142 133.5,-148 133.5,-148 133.5,-160 133.5,-160 133.5,-166 127.5,-172 121.5,-172"/>
+<text text-anchor="middle" x="68" y="-157" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">Masked Mean + Max Pool</text>
+<text text-anchor="middle" x="68" y="-146" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">over length (concat)</text>
 </g>
 <!-- blk&#45;&gt;pool -->
 <g id="edge4" class="edge">
@@ -72,9 +72,9 @@
 <!-- head -->
 <g id="node6" class="node">
 <title>head</title>
-<path fill="#ffffff" stroke="#000000" d="M97.5,-104C97.5,-104 38.5,-104 38.5,-104 32.5,-104 26.5,-98 26.5,-92 26.5,-92 26.5,-80 26.5,-80 26.5,-74 32.5,-68 38.5,-68 38.5,-68 97.5,-68 97.5,-68 103.5,-68 109.5,-74 109.5,-80 109.5,-80 109.5,-92 109.5,-92 109.5,-98 103.5,-104 97.5,-104"/>
+<path fill="#ffffff" stroke="#000000" d="M100.5,-104C100.5,-104 35.5,-104 35.5,-104 29.5,-104 23.5,-98 23.5,-92 23.5,-92 23.5,-80 23.5,-80 23.5,-74 29.5,-68 35.5,-68 35.5,-68 100.5,-68 100.5,-68 106.5,-68 112.5,-74 112.5,-80 112.5,-80 112.5,-92 112.5,-92 112.5,-98 106.5,-104 100.5,-104"/>
 <text text-anchor="middle" x="68" y="-89" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">MLP head</text>
-<text text-anchor="middle" x="68" y="-78" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">64 &#45;&gt; 128 &#45;&gt; 10</text>
+<text text-anchor="middle" x="68" y="-78" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#000000">128 &#45;&gt; 128 &#45;&gt; 10</text>
 </g>
 <!-- pool&#45;&gt;head -->
 <g id="edge5" class="edge">

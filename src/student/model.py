@@ -48,9 +48,12 @@ class ResidualDilatedBlock(nn.Module):
 class CapitiCNN(nn.Module):
     def __init__(self, vocab=VOCAB_SIZE, embed_dim=32, channels=64,
                  num_blocks=5, kernel_size=5, num_classes=10,
-                 dropout=0.1, dilations=(1, 2, 4, 8, 16)):
+                 dropout=0.1, dilations=(1, 2, 4, 8, 16),
+                 pool="mean", use_aux=False):
         super().__init__()
         assert len(dilations) == num_blocks
+        assert pool in ("mean", "mean_max")
+        self.pool_mode = pool
         self.embed = nn.Embedding(vocab, embed_dim, padding_idx=PAD_IDX)
         self.stem = nn.Conv1d(embed_dim, channels, kernel_size=1)
         self.blocks = nn.ModuleList([
@@ -58,24 +61,52 @@ class CapitiCNN(nn.Module):
                                   dropout=dropout)
             for d in dilations
         ])
+        head_in = channels * (2 if pool == "mean_max" else 1)
         self.head = nn.Sequential(
-            nn.Linear(channels, 128),
+            nn.Linear(head_in, 128),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(128, num_classes),
         )
+        # optional per-residue "is a fixed-position residue" head, used
+        # only at training time as an auxiliary loss. Exported inference
+        # models should be built with use_aux=False so the extra weights
+        # don't ship.
+        self.aux_head = (nn.Conv1d(channels, 1, kernel_size=1)
+                         if use_aux else None)
 
-    def forward(self, ids):  # ids: (B, L)
+    def _trunk(self, ids):
         mask = (ids != PAD_IDX).float()               # (B, L)
         x = self.embed(ids)                           # (B, L, E)
         x = x.transpose(1, 2)                         # (B, E, L)
         x = self.stem(x)                              # (B, C, L)
         for blk in self.blocks:
             x = blk(x)
-        # masked mean pool over L
+        return x, mask
+
+    def _pool(self, x, mask):
         mask_c = mask.unsqueeze(1)                    # (B, 1, L)
-        x = (x * mask_c).sum(dim=-1) / mask_c.sum(dim=-1).clamp(min=1.0)
-        return self.head(x)
+        denom = mask_c.sum(dim=-1).clamp(min=1.0)
+        mean = (x * mask_c).sum(dim=-1) / denom
+        if self.pool_mode == "mean":
+            return mean
+        # mean_max: mask padding to -inf before max
+        very_neg = torch.finfo(x.dtype).min
+        x_masked = x.masked_fill(mask_c == 0, very_neg)
+        mx = x_masked.max(dim=-1).values
+        return torch.cat([mean, mx], dim=-1)
+
+    def forward(self, ids):  # ids: (B, L)
+        x, mask = self._trunk(ids)
+        return self.head(self._pool(x, mask))
+
+    def forward_with_aux(self, ids):
+        """Training-only: returns (main_logits (B,C), aux_logits (B,L))."""
+        x, mask = self._trunk(ids)
+        main = self.head(self._pool(x, mask))
+        aux = self.aux_head(x).squeeze(1) if self.aux_head is not None \
+            else None
+        return main, aux, mask
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ from src.student.model import CapitiCNN, ResidualDilatedBlock
 
 
 def build_overview(channels, embed_dim, num_blocks, dilations, num_classes,
-                    max_len, fmt="svg"):
+                    max_len, pool, fmt="svg"):
     """Hand-built overview: identical blocks collapsed into one box with
        '(x N)' and the full dilation schedule listed inside.
     """
@@ -25,6 +25,13 @@ def build_overview(channels, embed_dim, num_blocks, dilations, num_classes,
     dot.attr(rankdir="TB", nodesep="0.35", ranksep="0.45")
     dot.attr("node", shape="box", style="rounded,filled",
              fillcolor="#ffffff", fontname="Helvetica", fontsize="10")
+
+    if pool == "mean_max":
+        pool_label = "Masked Mean + Max Pool\nover length (concat)"
+        head_in = channels * 2
+    else:
+        pool_label = "Masked Mean Pool\nover length"
+        head_in = channels
 
     nodes = [
         ("in",    f"token_ids\n(B, {max_len})",
@@ -37,9 +44,9 @@ def build_overview(channels, embed_dim, num_blocks, dilations, num_classes,
                   f"channels={channels}, k=5\n"
                   f"dilations={list(dilations)}",
                   "#fff6d6"),
-        ("pool",  "Masked Mean Pool\nover length",
+        ("pool",  pool_label,
                   "#ffffff"),
-        ("head",  f"MLP head\n{channels} -> 128 -> {num_classes}",
+        ("head",  f"MLP head\n{head_in} -> 128 -> {num_classes}",
                   "#ffffff"),
         ("out",   f"logits\n(B, {num_classes})",
                   "#eef6ff"),
@@ -77,10 +84,12 @@ def main():
     ap.add_argument("--num-classes", type=int, default=10)
     ap.add_argument("--out-dir", default="docs")
     ap.add_argument("--fmt", default="svg", choices=["svg", "png", "pdf"])
+    ap.add_argument("--pool", choices=("mean", "mean_max"), default="mean_max")
     args = ap.parse_args()
 
     out_dir = pathlib.Path(args.out_dir); out_dir.mkdir(parents=True, exist_ok=True)
-    model = CapitiCNN(channels=args.channels, dropout=0.0).eval()
+    model = CapitiCNN(channels=args.channels, dropout=0.0,
+                       pool=args.pool).eval()
 
     # text summary
     txt = summary(
@@ -101,6 +110,7 @@ def main():
         dilations=args.dilations,
         num_classes=args.num_classes,
         max_len=args.max_len,
+        pool=args.pool,
         fmt=args.fmt,
     )
     overview_path = out_dir / "capiti.overview"

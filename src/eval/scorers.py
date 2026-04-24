@@ -43,7 +43,11 @@ def load_targets(target_dir):
 
 # ---------- CapitiCNN (ONNX) ----------
 
-def capiti_scores(rows, onnx_path, meta_path, batch_size=64):
+def capiti_scores(rows, onnx_path, meta_path, batch_size=64,
+                   return_probs=False):
+    """Return in-set scores (shape N). If return_probs=True, also return
+    the full per-row class probability matrix (shape N x num_labels) and
+    the labels list, so callers can derive the predicted target."""
     import json
     import onnxruntime as ort
 
@@ -54,6 +58,7 @@ def capiti_scores(rows, onnx_path, meta_path, batch_size=64):
     pad_idx = vocab.get("pad", 0)
     x_idx = vocab.get("X", pad_idx)
     none_idx = meta["none_idx"]
+    labels = meta["labels"]
 
     so = ort.SessionOptions()
     so.intra_op_num_threads = int(os.environ.get("CAPITI_THREADS", "4"))
@@ -68,6 +73,8 @@ def capiti_scores(rows, onnx_path, meta_path, batch_size=64):
         return ids
 
     scores = np.zeros(len(rows), dtype=np.float32)
+    probs_all = np.zeros((len(rows), len(labels)), dtype=np.float32) \
+        if return_probs else None
     for start in range(0, len(rows), batch_size):
         batch = rows[start:start + batch_size]
         x = np.asarray([encode(r["seq"]) for r in batch], dtype=np.int64)
@@ -76,6 +83,10 @@ def capiti_scores(rows, onnx_path, meta_path, batch_size=64):
         e = np.exp(logits)
         probs = e / e.sum(axis=-1, keepdims=True)
         scores[start:start + len(batch)] = 1.0 - probs[:, none_idx]
+        if return_probs:
+            probs_all[start:start + len(batch)] = probs
+    if return_probs:
+        return scores, probs_all, labels
     return scores
 
 
@@ -157,6 +168,97 @@ def kmer_nn_scores(rows, target_seqs, k=3):
     X = _l2(_kmer_matrix(rows, k, index))
     T = _l2(T)
     return (X @ T.T).max(axis=1)
+
+
+def load_gate_mask(active_sites_dir, residue_maps_dir, variants_dir=None):
+    """Build per-target gate lookup. For each target returns a dict:
+      {"triples": list[(wt_idx, mpnn_0idx, expected_aa)],
+       "wt_len":  int,    # length of the WT FASTA for this target
+       "mpnn_len": int}   # length of MPNN designs (== PDB author range
+                          #   hi-lo+1, matches parse_multiple_chains seq)
+
+    The gate uses the query's length to decide which coordinate system
+    to check against, avoiding coincidental single-letter matches at
+    the "wrong" index."""
+    import json
+    from src.data.residue_map import ResidueMap
+    out = {}
+    for t in TARGETS:
+        asp = Path(active_sites_dir) / f"{t}.json"
+        rmp = Path(residue_maps_dir) / f"{t}.json"
+        if not asp.exists() or not rmp.exists():
+            continue
+        active = json.loads(asp.read_text())
+        fup = active.get("fixed_positions_uniprot", [])
+        if not fup:
+            continue
+        rmap = ResidueMap.load(rmp)
+        out[t] = {
+            "triples": rmap.expected_for_gate(fup),
+            "wt_len": rmap.wt_length,
+            "mpnn_len": rmap.data.get("mpnn_length", 0),
+        }
+    return out
+
+
+def apply_fixed_position_gate(rows, gate_mask, base_scores,
+                               predicted_targets, target_conf_min=0.2):
+    """Return a copy of base_scores where entries are zeroed whenever
+    the query fails to preserve the predicted target's active-site
+    residues in EITHER the WT or the MPNN coordinate system as a whole.
+
+    Gate semantics: a query is "preserved" iff (all fixed positions
+    match at wt_idx) OR (all fixed positions match at mpnn_0idx).
+    Otherwise the gate fires. Per-position OR-ing lets coincidental
+    single-letter matches at the "wrong" index mask real mutations
+    elsewhere, so we check consistency at the coord-system level.
+
+    predicted_targets[i] is a (target_id, confidence) tuple. Rows with
+    confidence below target_conf_min are passed through unchanged."""
+    scores = np.asarray(base_scores, dtype=np.float32).copy()
+    for i, r in enumerate(rows):
+        seq = r["seq"]
+        t, conf = predicted_targets[i]
+        if t is None or conf < target_conf_min:
+            continue
+        entry = gate_mask.get(t)
+        if not entry or not entry["triples"]:
+            continue
+        # Pick coordinate system by length. Queries whose length doesn't
+        # match either the WT or MPNN reference (decoys, scrambles,
+        # perturb30 after length changes) are passed through - the gate
+        # can only reliably check queries whose coordinate frame we
+        # know.
+        if len(seq) == entry["wt_len"]:
+            idx_sel = lambda tr: tr[0]
+        elif len(seq) == entry["mpnn_len"]:
+            idx_sel = lambda tr: tr[1]
+        else:
+            continue
+        for tr in entry["triples"]:
+            j = idx_sel(tr)
+            exp = tr[2]
+            if j is None or not (0 <= j < len(seq)) or seq[j] != exp:
+                scores[i] = 0.0
+                break
+    return scores
+
+
+def capiti_predicted_targets(probs, labels):
+    """For each row, return (top_non_none_target, prob_of_that_target).
+    Uses the model's argmax over T1..T9 (ignoring 'none')."""
+    none_idx = labels.index("none") if "none" in labels else -1
+    out = []
+    for row in probs:
+        best_i, best_p = -1, -1.0
+        for i, p in enumerate(row):
+            if i == none_idx:
+                continue
+            if p > best_p:
+                best_p = float(p); best_i = i
+        t = labels[best_i] if best_i >= 0 else None
+        out.append((t, best_p))
+    return out
 
 
 def kmer_lr_scores(train_rows, test_rows, k=3):

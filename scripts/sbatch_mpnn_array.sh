@@ -2,10 +2,10 @@
 #SBATCH --job-name=mpnn-gen
 #SBATCH --partition=priority_gpu
 #SBATCH --account=prio_skr2
-#SBATCH --gres=gpu:h200:1
+#SBATCH --gpus=rtx_5000_ada:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
-#SBATCH --time=01:00:00
+#SBATCH --mem=6G
+#SBATCH --time=00:45:00
 #SBATCH --array=1-9
 #SBATCH --output=logs/mpnn-gen-%A_%a.out
 #SBATCH --error=logs/mpnn-gen-%A_%a.err
@@ -23,4 +23,4 @@ TID="T${SLURM_ARRAY_TASK_ID}"
 echo "=== $TID on $(hostname) ==="
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
-python src/data/generate_mpnn_variants.py --target "$TID"
+python -m src.data.generate_mpnn_variants --target "$TID"

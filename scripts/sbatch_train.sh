@@ -2,10 +2,10 @@
 #SBATCH --job-name=capiti-train
 #SBATCH --partition=priority_gpu
 #SBATCH --account=prio_skr2
-#SBATCH --gres=gpu:h200:1
+#SBATCH --gpus=rtx_5000_ada:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
-#SBATCH --time=00:30:00
+#SBATCH --mem=4G
+#SBATCH --time=00:10:00
 #SBATCH --output=logs/train-%j.out
 #SBATCH --error=logs/train-%j.err
 

@@ -4,13 +4,14 @@ Balanced sampling by (target, class) cell. Multi-class cross-entropy over
 9 targets + "none". At eval we also derive the binary "in-set vs not"
 prediction as 1 - p(none).
 """
-import argparse, collections, csv, json, pathlib, random, sys, time
+import argparse, collections, csv, json, pathlib, random, re, sys, time
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 
+from src.data.residue_map import ResidueMap
 from src.student.model import CapitiCNN, encode, PAD_IDX
 
 
@@ -19,11 +20,75 @@ LABELS = TARGETS + ["none"]            # 10 classes
 LABEL_TO_IDX = {l: i for i, l in enumerate(LABELS)}
 NONE_IDX = LABEL_TO_IDX["none"]
 
+# Classes for which an active-site residue mask is well-defined. For
+# scramble / perturb30 / *_decoy the mask is undefined (sequence has
+# been permuted or there is no source target), so the aux loss is
+# disabled for those rows.
+AUX_CLASSES = {"wt", "mpnn_positive", "ala_scan", "combined_ko"}
+_TID_RE = re.compile(r"^(T\d+)_")
+
+
+def build_per_target_masks(residue_maps_dir, active_sites_dir, max_len):
+    """Return per-target dict with {wt_mask, mpnn_mask} 1D tensors of
+    length max_len, plus a `has_aux` dict[tid] -> bool so callers can
+    skip targets with no defined fixed positions (T7 at present)."""
+    out = {}
+    for tid in TARGETS:
+        active_path = pathlib.Path(active_sites_dir, f"{tid}.json")
+        rmap_path = pathlib.Path(residue_maps_dir, f"{tid}.json")
+        if not active_path.exists() or not rmap_path.exists():
+            continue
+        active = json.loads(active_path.read_text())
+        fup = active.get("fixed_positions_uniprot", [])
+        if not fup:
+            out[tid] = {"has_aux": False}
+            continue
+        rmap = ResidueMap.load(rmap_path)
+        wt_idxs = rmap.fixed_wt_idx(fup)
+        mpnn_idxs = [i - 1 for i in rmap.fixed_mpnn_1idx(fup)]
+        wt_mask = torch.zeros(max_len)
+        mpnn_mask = torch.zeros(max_len)
+        for i in wt_idxs:
+            if 0 <= i < max_len:
+                wt_mask[i] = 1.0
+        for i in mpnn_idxs:
+            if 0 <= i < max_len:
+                mpnn_mask[i] = 1.0
+        out[tid] = {"has_aux": True,
+                    "wt_mask": wt_mask, "mpnn_mask": mpnn_mask}
+    return out
+
+
+def row_aux_mask(row, per_target_masks, max_len):
+    """Return (mask (L,), use_aux (bool)). Mask all-zeros when aux is
+    disabled for this row."""
+    cls = row["class"]
+    if cls not in AUX_CLASSES:
+        return torch.zeros(max_len), False
+    m = _TID_RE.match(row["id"])
+    if m is None:
+        return torch.zeros(max_len), False
+    pt = per_target_masks.get(m.group(1))
+    if pt is None or not pt.get("has_aux"):
+        return torch.zeros(max_len), False
+    # "_mpnn_" in id marks an MPNN-background variant (includes
+    # mpnn_positive itself and ala_scan/combined_ko of MPNN backbones).
+    is_mpnn_bg = "_mpnn_" in row["id"]
+    key = "mpnn_mask" if is_mpnn_bg else "wt_mask"
+    return pt[key].clone(), True
+
 
 class CapitiDataset(Dataset):
-    def __init__(self, rows, max_len):
+    def __init__(self, rows, max_len, per_target_masks=None):
         self.rows = rows
         self.max_len = max_len
+        self.per_target_masks = per_target_masks  # None -> no aux
+        # pre-compute masks to avoid per-worker JSON reads
+        if per_target_masks is not None:
+            self._cached = [row_aux_mask(r, per_target_masks, max_len)
+                            for r in rows]
+        else:
+            self._cached = None
 
     def __len__(self):
         return len(self.rows)
@@ -32,7 +97,10 @@ class CapitiDataset(Dataset):
         r = self.rows[i]
         ids = torch.tensor(encode(r["seq"], self.max_len), dtype=torch.long)
         y = torch.tensor(LABEL_TO_IDX[r["target"]], dtype=torch.long)
-        return ids, y
+        if self._cached is None:
+            return ids, y
+        mask, use_aux = self._cached[i]
+        return ids, y, mask, torch.tensor(use_aux, dtype=torch.bool)
 
 
 def load_tsv(path):
@@ -149,6 +217,13 @@ def main():
     ap.add_argument("--channels", type=int, default=64)
     ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--pool", choices=("mean", "mean_max"), default="mean",
+                    help="pooling mode over the sequence axis")
+    ap.add_argument("--aux-weight", type=float, default=0.0,
+                    help="if > 0, add a per-residue 'is fixed-position' "
+                         "BCE loss with this weight (training-time regulariser)")
+    ap.add_argument("--residue-maps", default="data/targets/residue_maps")
+    ap.add_argument("--active-sites", default="data/targets/active_sites")
     args = ap.parse_args()
 
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
@@ -162,7 +237,11 @@ def main():
     test_rows  = [r for r in rows if r["split"] == "test"]
     print(f"splits: train={len(train_rows)} val={len(val_rows)} test={len(test_rows)}")
 
-    train_ds = CapitiDataset(train_rows, args.max_len)
+    use_aux = args.aux_weight > 0
+    per_target_masks = (build_per_target_masks(
+        args.residue_maps, args.active_sites, args.max_len)
+        if use_aux else None)
+    train_ds = CapitiDataset(train_rows, args.max_len, per_target_masks)
     val_ds   = CapitiDataset(val_rows, args.max_len)
     test_ds  = CapitiDataset(test_rows, args.max_len)
 
@@ -174,14 +253,17 @@ def main():
     test_loader  = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False,
                               num_workers=2, pin_memory=True)
 
-    model = CapitiCNN(channels=args.channels, dropout=args.dropout).to(device)
+    model = CapitiCNN(channels=args.channels, dropout=args.dropout,
+                      pool=args.pool, use_aux=use_aux).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"model params: {n_params:,}")
+    print(f"model params: {n_params:,} pool={args.pool} "
+          f"aux_weight={args.aux_weight}")
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
                              weight_decay=args.weight_decay)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs)
     loss_fn = nn.CrossEntropyLoss()
+    bce = nn.BCEWithLogitsLoss(reduction="none")
 
     out = pathlib.Path(args.out_dir); out.mkdir(parents=True, exist_ok=True)
     history = []
@@ -189,17 +271,36 @@ def main():
     for ep in range(args.epochs):
         model.train()
         losses = []
+        aux_losses = []
         t0 = time.time()
-        for ids, y in train_loader:
-            ids = ids.to(device); y = y.to(device)
-            logits = model(ids)
-            loss = loss_fn(logits, y)
+        for batch in train_loader:
+            if use_aux:
+                ids, y, mask, ua = batch
+                ids = ids.to(device); y = y.to(device)
+                mask = mask.to(device); ua = ua.to(device)
+                logits, aux_logits, pad_mask = model.forward_with_aux(ids)
+                loss_main = loss_fn(logits, y)
+                bce_el = bce(aux_logits, mask)
+                # valid entries: non-padding residues in rows with use_aux
+                sel = pad_mask * ua.float().unsqueeze(-1)
+                denom = sel.sum().clamp(min=1.0)
+                loss_aux = (bce_el * sel).sum() / denom
+                loss = loss_main + args.aux_weight * loss_aux
+                aux_losses.append(loss_aux.item())
+            else:
+                ids, y = batch
+                ids = ids.to(device); y = y.to(device)
+                logits = model(ids)
+                loss = loss_fn(logits, y)
             opt.zero_grad(); loss.backward(); opt.step()
             losses.append(loss.item())
         sched.step()
         vm = evaluate(model, val_loader, device)
+        extra = {}
+        if aux_losses:
+            extra["aux_loss"] = float(np.mean(aux_losses))
         rec = dict(epoch=ep, train_loss=float(np.mean(losses)),
-                   elapsed_s=round(time.time() - t0, 1), **vm)
+                   elapsed_s=round(time.time() - t0, 1), **extra, **vm)
         history.append(rec)
         print(json.dumps(rec), flush=True)
         if vm["binary_auc"] > best_val_auc:

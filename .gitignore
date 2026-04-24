@@ -6,8 +6,9 @@ __pycache__/
 .cache/
 logs/
 third_party/
-data
-data/
+# anchor to repo root so src/data/ stays tracked; trailing-slash-less
+# form matches the repo-root `data` symlink into scratch as well.
+/data
 checkpoints/
 *.pdb
 *.pt
@@ -22,3 +23,4 @@ dist/
 
 # bundled model should be tracked despite *.onnx above
 !capiti/_model/capiti.onnx
+.claude/
