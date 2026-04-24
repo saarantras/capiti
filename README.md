@@ -29,10 +29,27 @@ pip install capiti
 ## Use
 
 ```
-capiti ATGCGTAAAGTGGCC...           # prints TRUE or FALSE
+capiti ATGCGTAAAGTGGCC...           # prints TRUE or FALSE (default set ab9)
 capiti ATGCGT...  --cutoff 0.8 -v   # TRUE  p_inset=0.995
 capiti --fasta seqs.fa              # batch over a FASTA
 echo ATGCGT... | capiti --stdin
+```
+
+### Reference sets
+
+`capiti` ships multiple bundled reference sets, selectable at invocation
+time. Use `--set NAME` (or the `CAPITI_SET` env var).
+
+| set | status | description |
+|---|---|---|
+| `ab9` | available | 9 soluble enzymes (several beta-lactamases relevant to antibiotic resistance, plus other enzymes). Default. |
+| `C`   | planned   | TBA. |
+| `E`   | planned   | TBA. |
+
+```
+capiti ATGCGT... --set ab9
+capiti --fasta seqs.fa --set C
+CAPITI_SET=E capiti --stdin
 ```
 
 Exit code is 0 on TRUE, 1 on FALSE, suitable for shell pipelines:
@@ -43,11 +60,9 @@ capiti ATGCGT... && echo "in set" || echo "not in set"
 
 ## Status
 
-**Release: `Ab9`** — the 0.0.x line is built on 9 reference enzymes
-(several antibiotic-resistance-relevant beta-lactamases, plus other
-soluble enzymes). The model and reference set will change between
-0.0.x releases. Expect the public CLI surface to remain stable; the
-bundled model is research-grade and should not be used for anything
+The 0.0.x line is research-grade. The CLI surface (flags, stdin/FASTA
+behaviour, exit codes) is stable; bundled models will be retrained and
+updated between 0.0.x releases, and should not be used for anything
 operational.
 
 ## License

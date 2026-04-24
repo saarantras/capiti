@@ -46,4 +46,4 @@ include = ["capiti*"]
 exclude = ["src*", "tests*", "third_party*", "scripts*", "data*", "notebooks*", "configs*", "logs*"]
 
 [tool.setuptools.package-data]
-capiti = ["_model/*.onnx", "_model/*.json"]
+capiti = ["_model/*/*.onnx", "_model/*/*.json", "_model/*/README.md"]

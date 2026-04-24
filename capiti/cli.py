@@ -1,12 +1,14 @@
 """capiti CLI: nucleotide sequence -> TRUE/FALSE vs in-set function.
 
 Usage:
-    capiti <nt_sequence> [--cutoff 0.5] [-v] [--which]
-    capiti --fasta seqs.fa [--cutoff 0.5]
-    capiti --stdin [--cutoff 0.5]
+    capiti <nt_sequence> [--set ab9|C|E] [--cutoff 0.5] [-v] [--which]
+    capiti --fasta seqs.fa [--set ab9]
+    capiti --stdin
 
-Model: bundled with the package under capiti/_model/. Override with
---model / --meta, or set CAPITI_MODEL (and optionally CAPITI_META).
+Models: one per reference set, bundled under capiti/_model/<set>/.
+Default set is ab9. Override with --set, or CAPITI_SET env var. Power
+users can point at an arbitrary model with --model / --meta
+(or CAPITI_MODEL / CAPITI_META).
 
 Exit code: 0 if any input is TRUE at the cutoff, 1 otherwise. Handy for
 shell pipelines.
@@ -75,9 +77,12 @@ def read_fasta(path):
         yield name, "".join(buf)
 
 
-def _bundled(filename):
-    """Return a path to a file bundled under capiti/_model/."""
-    return resources.files("capiti").joinpath("_model", filename)
+AVAILABLE_SETS = ("ab9", "C", "E")
+
+
+def _bundled(set_name, filename):
+    """Return a path to a file bundled under capiti/_model/<set>/."""
+    return resources.files("capiti").joinpath("_model", set_name, filename)
 
 
 def main(argv=None):
@@ -92,10 +97,17 @@ def main(argv=None):
                     help="read one sequence from stdin")
     ap.add_argument("--cutoff", type=float, default=0.5,
                     help="probability threshold for TRUE (default 0.5)")
+    ap.add_argument("--set", dest="set_name",
+                    default=os.environ.get("CAPITI_SET", "ab9"),
+                    choices=AVAILABLE_SETS,
+                    help="which bundled reference set / model to use "
+                         "(default ab9; env: CAPITI_SET)")
     ap.add_argument("--model", default=os.environ.get("CAPITI_MODEL"),
-                    help="path to .onnx model (default: bundled, env: CAPITI_MODEL)")
+                    help="explicit path to .onnx model (overrides --set; "
+                         "env: CAPITI_MODEL)")
     ap.add_argument("--meta", default=os.environ.get("CAPITI_META"),
-                    help="path to .meta.json (default: bundled, env: CAPITI_META)")
+                    help="explicit path to .meta.json (overrides --set; "
+                         "env: CAPITI_META)")
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--which", action="store_true",
                     help="also report top-class label (T1..T9 or none)")
@@ -125,8 +137,17 @@ def main(argv=None):
     except Exception:
         pass
 
-    model_path = args.model or str(_bundled("capiti.onnx"))
-    meta_path = args.meta or str(_bundled("capiti.meta.json"))
+    model_path = args.model or str(_bundled(args.set_name, "capiti.onnx"))
+    meta_path = args.meta or str(_bundled(args.set_name, "capiti.meta.json"))
+    if not os.path.exists(model_path):
+        sys.stderr.write(
+            f"capiti: model for set '{args.set_name}' is not bundled "
+            f"(expected at {model_path}).\n"
+            f"available sets: {', '.join(AVAILABLE_SETS)}.\n"
+            f"pass --model / --meta to point at a file, or install a "
+            f"release that ships this set.\n"
+        )
+        return 2
 
     with open(meta_path) as fh:
         meta = json.load(fh)
