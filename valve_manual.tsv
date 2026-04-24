@@ -1,0 +1,54 @@
+Valve	Function
+1	Controls the flow of argon to column 1
+2	Controls the flow of DNA/RNA output to vial 1
+3	Controls the flow of trityl output from column 1 to chlorinated waste
+4	Controls the flow of waste from column 1
+5	Controls the flow of argon to column 2
+6	Controls the flow of DNA/RNA output to vial 2
+7	Controls the flow of trityl output from column 2 to chlorinated waste
+8	Controls the flow of waste from column 2
+9	Controls the flow of argon to column 3
+10	Controls the flow of DNA/RNA output to vial 3
+11	Controls the flow of trityl output from column 3 to chlorinated waste
+12	Controls the flow of waste from column 3
+13	Controls the flow of argon to column 4
+14	Controls the flow of DNA/RNA output to vial 4
+15	Controls the flow of trityl output from column 4 to chlorinated waste
+16	Controls the flow of waste from column 4
+17	Directs output from the reagent valve block to column 1
+18	Directs output from the reagent valve block to column 2
+19	Directs output from the reagent valve block to column 3
+20	Directs output from the reagent valve block to column 4
+21	Controls the input of acetic anhydride to the front reagent valve block
+22	Controls the input of NMI to the front reagent valve block
+23	Controls the input of Auxiliary to the front reagent valve block
+24	Controls the input of Iodine or Auxiliary to the front reagent valve block
+25	Controls the input of NH4OH to the front reagent valve block
+26	Output to waste, for both reagent valve blocks
+27	Controls the input of base from position 5 to the reagent valve block
+28	Controls the input of the position 6 base
+29	Controls the input of the position 7 base
+30	Controls the input of the position 8 base
+31	Controls the input of base A to the rear reagent valve block
+32	Controls the input of base G to the rear reagent valve block
+33	Controls the input of base C to the rear reagent valve block
+34	Controls the input of base T to the rear reagent valve block
+35	Controls the input of tetrazole
+36	Controls the connection between the third reagent block and the rear reagent block
+37	Controls the input of argon (HP gas)
+38	Controls the input of CH3CN
+39	Controls the input of DCM
+40	Controls the input of TCA
+41	Controls the pressure transducer
+42	Iodine (pressure)
+43	manifold A (pressure manifold for all bases)
+44	manifold B (vent manifold for all bases)
+45	NH4OH (pressure)
+46	NH4OH (vent)
+47	Tetrazole (pressure)
+48	Aux (pressure)
+49	Acetic anhydride and NMI (pressure)
+50	CH3CN (pressure)
+51	DCM (pressure)
+52	TCA (pressure)
+53	Controls the input of argon (LP gas)
