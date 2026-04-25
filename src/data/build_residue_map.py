@@ -39,17 +39,34 @@ SIFTS_URL = (
     "https://ftp.ebi.ac.uk/pub/databases/msd/sifts/split_xml/{sub}/{pdb}.xml.gz"
 )
 UNIPROT_URL = "https://rest.uniprot.org/uniprotkb/{acc}.fasta"
+AF_URL = "https://alphafold.ebi.ac.uk/files/AF-{acc}-F1-model_v4.pdb"
 
 SIFTS_NS = "{http://www.ebi.ac.uk/pdbe/docs/sifts/eFamily.xsd}"
 
 
-def _fetch(url, out_path, binary=True, timeout=60):
+_UA = "capiti/0.1 (https://github.com/mcnoonz/capiti)"
+
+
+def _fetch(url, out_path, binary=True, timeout=60, tries=4):
+    import time, urllib.error
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    if out_path.exists():
+    if out_path.exists() and out_path.stat().st_size > 0:
         return out_path.read_bytes() if binary else out_path.read_text()
-    with urllib.request.urlopen(url, timeout=timeout) as r:
-        data = r.read()
+    req = urllib.request.Request(url, headers={"User-Agent": _UA})
+    delay = 1.0
+    data = None
+    for attempt in range(tries):
+        try:
+            time.sleep(0.1)
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = r.read()
+            break
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < tries - 1:
+                time.sleep(delay); delay *= 2
+                continue
+            raise
     if binary:
         out_path.write_bytes(data)
         return data
@@ -205,6 +222,55 @@ def pdb_chain_ca_keys(pdb_path, chain):
     return keys, lo
 
 
+def build_one_af(target, active_sites, wt_seq, unp_cache, pdb_path):
+    """Residue-map build for an AlphaFold-predicted target. AF
+    structures are UniProt-indexed by construction: residue i in the
+    AF PDB corresponds to UniProt residue i (1-indexed). No SIFTS, no
+    alignment needed beyond matching WT FASTA to UniProt canonical
+    (usually identical for AF targets)."""
+    tid = target
+    acc = active_sites["uniprot"]
+    unp_seq = fetch_uniprot_fasta(acc, unp_cache)
+    pdb_keys, lo_author = pdb_chain_ca_keys(pdb_path, active_sites["chain"])
+    mpnn_length = 0
+    if pdb_keys:
+        hi_author = max(n for n, _ in pdb_keys)
+        mpnn_length = hi_author - lo_author + 1
+    # AF: authoritative mapping is identity. Build per-UniProt records
+    # over the UniProt sequence.
+    records = []
+    diags = []
+    for i, aa in enumerate(unp_seq):
+        unp_num = i + 1
+        # AF PDB residue numbers == UniProt numbers
+        present = (unp_num, "") in set(pdb_keys)
+        records.append({
+            "uniprot_num": unp_num,
+            "wt_idx": i if i < len(wt_seq) else None,
+            "pdb_num": unp_num if present else None,
+            "pdb_icode": "" if present else "",
+            "mpnn_1idx": (unp_num - lo_author + 1) if present else None,
+            "aa": aa,
+        })
+    if len(wt_seq) != len(unp_seq):
+        diags.append(f"{tid}: wt_fasta len {len(wt_seq)} != "
+                      f"uniprot canonical len {len(unp_seq)}")
+    return {
+        "target": tid,
+        "pdb": active_sites["pdb"],
+        "chain": active_sites["chain"],
+        "uniprot_accession": acc,
+        "wt_length": len(wt_seq),
+        "uniprot_length": len(unp_seq),
+        "mpnn_length": mpnn_length,
+        "wt_unp_offset": 0,
+        "alignment_window": len(unp_seq),
+        "fixed_positions_uniprot": sorted(
+            active_sites.get("fixed_positions_uniprot", [])),
+        "residues": records,
+    }, diags
+
+
 def build_one(target, active_sites, wt_seq, sifts_cache, unp_cache,
               pdb_path):
     """Build a residue map for one target. Returns (map_dict, diagnostics)."""
@@ -358,10 +424,18 @@ def main():
         print(f"[{tid}] pdb={active['pdb']} uniprot={active.get('uniprot')} "
               f"wt_len={len(wt)}", file=sys.stderr)
         pdb_path = Path(args.structures, f"{tid}.pdb")
+        if not (fasta_dir / f"{tid}.fasta").exists() or not pdb_path.exists():
+            print(f"[{tid}] SKIP: missing FASTA or PDB", file=sys.stderr)
+            any_diag = True
+            continue
         try:
-            res_map, diags = build_one(
-                tid, active, wt, args.sifts_cache, args.uniprot_cache,
-                pdb_path)
+            if (active.get("pdb") or "").startswith("AF:"):
+                res_map, diags = build_one_af(
+                    tid, active, wt, args.uniprot_cache, pdb_path)
+            else:
+                res_map, diags = build_one(
+                    tid, active, wt, args.sifts_cache, args.uniprot_cache,
+                    pdb_path)
         except Exception as e:
             print(f"[{tid}] FAILED: {e}", file=sys.stderr)
             any_diag = True

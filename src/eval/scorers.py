@@ -25,11 +25,13 @@ AA_SET = set(AA)
 # ---------- target sequences ----------
 
 def load_targets(target_dir):
-    """Dict target_id -> WT AA sequence, taking the first record per file
-    (skips monomer variants etc.)."""
+    """Dict target_id -> WT AA sequence, scanning every *.fasta in the
+    directory and taking the first record per file. The target id is
+    the file's stem, so this works for any target-naming scheme
+    (ab9's `T1.fasta`, capiti-C's `T-C42.fasta`, AlphaFold targets,
+    etc.) without a hardcoded list."""
     seqs = {}
-    for t in TARGETS:
-        fa = Path(target_dir) / f"{t}.fasta"
+    for fa in sorted(Path(target_dir).glob("*.fasta")):
         with open(fa) as f:
             lines = [ln.strip() for ln in f if ln.strip()]
         seq = ""
@@ -37,7 +39,8 @@ def load_targets(target_dir):
             if ln.startswith(">"):
                 break
             seq += ln
-        seqs[t] = seq
+        if seq:
+            seqs[fa.stem] = seq
     return seqs
 
 
@@ -140,6 +143,9 @@ def build_kmer_index(k):
 
 
 def _kmer_vec(seq, k, index):
+    """Dense per-sequence count vector. Used only for the small target
+    matrix; per-row training matrices use _kmer_matrix_sparse instead
+    (avoids materialising a dense N x 8000 matrix at >300k rows)."""
     v = np.zeros(len(index), dtype=np.float32)
     s = "".join(ch for ch in seq if ch in AA_SET)
     for i in range(len(s) - k + 1):
@@ -149,24 +155,63 @@ def _kmer_vec(seq, k, index):
     return v
 
 
-def _kmer_matrix(rows, k, index):
-    X = np.zeros((len(rows), len(index)), dtype=np.float32)
-    for i, r in enumerate(rows):
-        X[i] = _kmer_vec(r["seq"], k, index)
-    return X
+def _kmer_matrix_sparse(rows, k, index):
+    """Build a CSR sparse matrix of k-mer counts: shape (N, |index|).
+
+    Density per row is ~1-3% (a sequence of length L has at most L-k+1
+    distinct k-mers out of |index|=20**k), so for k=3 and ~300k rows
+    this is ~50x smaller than the equivalent dense matrix. Returns a
+    scipy.sparse.csr_matrix; sklearn's `LogisticRegression(solver=
+    'liblinear')` and `scipy.sparse.linalg.norm` handle it natively."""
+    from scipy import sparse
+    indptr = [0]
+    indices = []
+    data = []
+    for r in rows:
+        counts = {}
+        s = "".join(ch for ch in r["seq"] if ch in AA_SET)
+        for i in range(len(s) - k + 1):
+            j = index.get(s[i:i + k])
+            if j is not None:
+                counts[j] = counts.get(j, 0) + 1
+        for j, c in counts.items():
+            indices.append(j)
+            data.append(c)
+        indptr.append(len(indices))
+    return sparse.csr_matrix(
+        (np.asarray(data, dtype=np.float32),
+         np.asarray(indices, dtype=np.int32),
+         np.asarray(indptr, dtype=np.int64)),
+        shape=(len(rows), len(index)),
+    )
+
+
+def _l2_sparse(X):
+    """Row-wise L2 normalize a CSR sparse matrix in-place-ish (returns
+    a new CSR with scaled data array). Empty rows pass through as 0."""
+    from scipy import sparse
+    norms = np.sqrt(np.asarray(X.multiply(X).sum(axis=1)).ravel())
+    norms[norms == 0] = 1.0
+    inv = sparse.diags(1.0 / norms)
+    return inv @ X
 
 
 def _l2(X):
+    """Dense L2 row-normalise; kept for the (small) target matrix."""
     n = np.linalg.norm(X, axis=1, keepdims=True)
     n[n == 0] = 1
     return X / n
 
 
 def kmer_nn_scores(rows, target_seqs, k=3):
+    """Max cosine similarity to any of the k WT target k-mer vectors.
+    Targets are dense (|targets| is small); rows go through the sparse
+    path because there can be hundreds of thousands of them."""
     index = build_kmer_index(k)
     T = np.stack([_kmer_vec(s, k, index) for s in target_seqs.values()])
-    X = _l2(_kmer_matrix(rows, k, index))
     T = _l2(T)
+    X = _l2_sparse(_kmer_matrix_sparse(rows, k, index))
+    # sparse @ dense -> dense ndarray, no .todense() needed
     return (X @ T.T).max(axis=1)
 
 
@@ -183,10 +228,10 @@ def load_gate_mask(active_sites_dir, residue_maps_dir, variants_dir=None):
     import json
     from src.data.residue_map import ResidueMap
     out = {}
-    for t in TARGETS:
-        asp = Path(active_sites_dir) / f"{t}.json"
+    for asp in sorted(Path(active_sites_dir).glob("*.json")):
+        t = asp.stem
         rmp = Path(residue_maps_dir) / f"{t}.json"
-        if not asp.exists() or not rmp.exists():
+        if not rmp.exists():
             continue
         active = json.loads(asp.read_text())
         fup = active.get("fixed_positions_uniprot", [])
@@ -262,10 +307,14 @@ def capiti_predicted_targets(probs, labels):
 
 
 def kmer_lr_scores(train_rows, test_rows, k=3):
+    """k-mer logistic-regression baseline. Uses sparse CSR matrices
+    plus sklearn's `liblinear` solver (sparse-native, single-threaded
+    but fast enough). Memory scales with number of nonzeros, not with
+    N x |index|, so this comfortably handles 300k+ training rows."""
     index = build_kmer_index(k)
-    Xtr = _l2(_kmer_matrix(train_rows, k, index))
+    Xtr = _l2_sparse(_kmer_matrix_sparse(train_rows, k, index))
     ytr = np.array([int(r["binary_label"]) for r in train_rows])
-    Xte = _l2(_kmer_matrix(test_rows, k, index))
-    clf = LogisticRegression(max_iter=2000, C=1.0, n_jobs=-1)
+    Xte = _l2_sparse(_kmer_matrix_sparse(test_rows, k, index))
+    clf = LogisticRegression(max_iter=2000, C=1.0, solver="liblinear")
     clf.fit(Xtr, ytr)
     return clf.predict_proba(Xte)[:, 1]

@@ -15,25 +15,33 @@ from src.data.residue_map import ResidueMap
 from src.student.model import CapitiCNN, encode, PAD_IDX
 
 
-TARGETS = [f"T{i}" for i in range(1, 10)]
-LABELS = TARGETS + ["none"]            # 10 classes
-LABEL_TO_IDX = {l: i for i, l in enumerate(LABELS)}
-NONE_IDX = LABEL_TO_IDX["none"]
-
 # Classes for which an active-site residue mask is well-defined. For
 # scramble / perturb30 / *_decoy the mask is undefined (sequence has
 # been permuted or there is no source target), so the aux loss is
 # disabled for those rows.
 AUX_CLASSES = {"wt", "mpnn_positive", "ala_scan", "combined_ko"}
-_TID_RE = re.compile(r"^(T\d+)_")
+# Target-id prefix regex: matches the leading Ti identifier in variant
+# names. Works for `T1`, `T-C1`, `T-E61`, etc.
+_TID_RE = re.compile(r"^(T[-]?[A-Za-z]?\d+)_")
 
 
-def build_per_target_masks(residue_maps_dir, active_sites_dir, max_len):
+def derive_labels(rows):
+    """Build an ordered label list from the dataset: every unique
+    non-"none" target, sorted, followed by "none" as the final label.
+    This lets the training pipeline handle any target set without a
+    hardcoded TARGETS list."""
+    uniq = sorted({r["target"] for r in rows if r["target"] != "none"})
+    labels = uniq + ["none"]
+    return labels
+
+
+def build_per_target_masks(residue_maps_dir, active_sites_dir, max_len,
+                            targets):
     """Return per-target dict with {wt_mask, mpnn_mask} 1D tensors of
     length max_len, plus a `has_aux` dict[tid] -> bool so callers can
-    skip targets with no defined fixed positions (T7 at present)."""
+    skip targets with no defined fixed positions."""
     out = {}
-    for tid in TARGETS:
+    for tid in targets:
         active_path = pathlib.Path(active_sites_dir, f"{tid}.json")
         rmap_path = pathlib.Path(residue_maps_dir, f"{tid}.json")
         if not active_path.exists() or not rmap_path.exists():
@@ -79,9 +87,10 @@ def row_aux_mask(row, per_target_masks, max_len):
 
 
 class CapitiDataset(Dataset):
-    def __init__(self, rows, max_len, per_target_masks=None):
+    def __init__(self, rows, max_len, label_to_idx, per_target_masks=None):
         self.rows = rows
         self.max_len = max_len
+        self.label_to_idx = label_to_idx
         self.per_target_masks = per_target_masks  # None -> no aux
         # pre-compute masks to avoid per-worker JSON reads
         if per_target_masks is not None:
@@ -96,7 +105,7 @@ class CapitiDataset(Dataset):
     def __getitem__(self, i):
         r = self.rows[i]
         ids = torch.tensor(encode(r["seq"], self.max_len), dtype=torch.long)
-        y = torch.tensor(LABEL_TO_IDX[r["target"]], dtype=torch.long)
+        y = torch.tensor(self.label_to_idx[r["target"]], dtype=torch.long)
         if self._cached is None:
             return ids, y
         mask, use_aux = self._cached[i]
@@ -121,13 +130,13 @@ def make_balanced_sampler(rows):
     return WeightedRandomSampler(w, num_samples=len(rows), replacement=True)
 
 
-def metrics(logits, y):
+def metrics(logits, y, none_idx):
     """logits (N, C), y (N,) -> dict of metrics."""
     p = F.softmax(logits, dim=-1).numpy()
     y = y.numpy()
     pred = p.argmax(axis=1)
-    bin_score = 1.0 - p[:, NONE_IDX]
-    bin_y = (y != NONE_IDX).astype(int)
+    bin_score = 1.0 - p[:, none_idx]
+    bin_y = (y != none_idx).astype(int)
 
     # ROC-AUC (binary)
     order = np.argsort(-bin_score)
@@ -149,29 +158,30 @@ def metrics(logits, y):
 
     # Accuracy (10-way) and on-positive confusion
     acc10 = (pred == y).mean()
-    pos_mask = y != NONE_IDX
+    pos_mask = y != none_idx
     acc_pos = (pred[pos_mask] == y[pos_mask]).mean() if pos_mask.any() else float("nan")
-    acc_neg = (pred[~pos_mask] == NONE_IDX).mean() if (~pos_mask).any() else float("nan")
+    acc_neg = (pred[~pos_mask] == none_idx).mean() if (~pos_mask).any() else float("nan")
     return dict(binary_auc=float(auc), binary_prauc=float(prauc),
                 acc10=float(acc10), acc_on_pos=float(acc_pos),
                 acc_on_neg=float(acc_neg))
 
 
 @torch.no_grad()
-def evaluate(model, loader, device):
+def evaluate(model, loader, device, none_idx):
     model.eval()
     all_logits, all_y = [], []
     for ids, y in loader:
         ids = ids.to(device); y = y.to(device)
         logits = model(ids)
         all_logits.append(logits.cpu()); all_y.append(y.cpu())
-    return metrics(torch.cat(all_logits), torch.cat(all_y))
+    return metrics(torch.cat(all_logits), torch.cat(all_y), none_idx)
 
 
-def per_class_breakdown(model, rows, max_len, device, batch_size=128):
+def per_class_breakdown(model, rows, max_len, device, label_to_idx,
+                         none_idx, batch_size=128):
     model.eval()
     # compute per-class accuracy
-    ds = CapitiDataset(rows, max_len)
+    ds = CapitiDataset(rows, max_len, label_to_idx)
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
     all_logits = []
     with torch.no_grad():
@@ -180,19 +190,19 @@ def per_class_breakdown(model, rows, max_len, device, batch_size=128):
     logits = torch.cat(all_logits)
     p = F.softmax(logits, dim=-1).numpy()
     pred = p.argmax(axis=1)
-    bin_score = 1.0 - p[:, NONE_IDX]
+    bin_score = 1.0 - p[:, none_idx]
 
     out = {}
     by_cell = collections.defaultdict(list)
     for i, r in enumerate(rows):
         key = r["class"]
-        y_true = LABEL_TO_IDX[r["target"]]
+        y_true = label_to_idx[r["target"]]
         by_cell[key].append((y_true, pred[i], bin_score[i]))
     for cls, entries in by_cell.items():
         ys = np.array([e[0] for e in entries])
         ps = np.array([e[1] for e in entries])
         scores = np.array([e[2] for e in entries])
-        is_pos = (ys != NONE_IDX).astype(int)
+        is_pos = (ys != none_idx).astype(int)
         n = len(entries)
         acc = float((ps == ys).mean())
         if is_pos.max() == is_pos.min():
@@ -209,7 +219,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", default="data/dataset/dataset.tsv")
     ap.add_argument("--out-dir", default="data/runs/v1")
-    ap.add_argument("--max-len", type=int, default=800)
+    ap.add_argument("--max-len", type=int, default=1200)
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -237,13 +247,20 @@ def main():
     test_rows  = [r for r in rows if r["split"] == "test"]
     print(f"splits: train={len(train_rows)} val={len(val_rows)} test={len(test_rows)}")
 
+    labels = derive_labels(rows)
+    targets = [l for l in labels if l != "none"]
+    label_to_idx = {l: i for i, l in enumerate(labels)}
+    none_idx = label_to_idx["none"]
+    print(f"labels: {len(labels)} ({len(targets)} targets + none)")
+
     use_aux = args.aux_weight > 0
     per_target_masks = (build_per_target_masks(
-        args.residue_maps, args.active_sites, args.max_len)
+        args.residue_maps, args.active_sites, args.max_len, targets)
         if use_aux else None)
-    train_ds = CapitiDataset(train_rows, args.max_len, per_target_masks)
-    val_ds   = CapitiDataset(val_rows, args.max_len)
-    test_ds  = CapitiDataset(test_rows, args.max_len)
+    train_ds = CapitiDataset(train_rows, args.max_len, label_to_idx,
+                              per_target_masks)
+    val_ds   = CapitiDataset(val_rows, args.max_len, label_to_idx)
+    test_ds  = CapitiDataset(test_rows, args.max_len, label_to_idx)
 
     sampler = make_balanced_sampler(train_rows)
     train_loader = DataLoader(train_ds, batch_size=args.batch_size,
@@ -254,7 +271,8 @@ def main():
                               num_workers=2, pin_memory=True)
 
     model = CapitiCNN(channels=args.channels, dropout=args.dropout,
-                      pool=args.pool, use_aux=use_aux).to(device)
+                      pool=args.pool, use_aux=use_aux,
+                      num_classes=len(labels)).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"model params: {n_params:,} pool={args.pool} "
           f"aux_weight={args.aux_weight}")
@@ -266,6 +284,10 @@ def main():
     bce = nn.BCEWithLogitsLoss(reduction="none")
 
     out = pathlib.Path(args.out_dir); out.mkdir(parents=True, exist_ok=True)
+    # persist labels so export_onnx / inference know the class index map
+    (out / "labels.json").write_text(json.dumps(
+        {"labels": labels, "none_idx": none_idx, "pool": args.pool,
+         "channels": args.channels, "max_len": args.max_len}, indent=2))
     history = []
     best_val_auc = -1.0
     for ep in range(args.epochs):
@@ -295,7 +317,7 @@ def main():
             opt.zero_grad(); loss.backward(); opt.step()
             losses.append(loss.item())
         sched.step()
-        vm = evaluate(model, val_loader, device)
+        vm = evaluate(model, val_loader, device, none_idx)
         extra = {}
         if aux_losses:
             extra["aux_loss"] = float(np.mean(aux_losses))
@@ -309,9 +331,10 @@ def main():
 
     # reload best and test
     model.load_state_dict(torch.load(out / "best.pt"))
-    tm = evaluate(model, test_loader, device)
+    tm = evaluate(model, test_loader, device, none_idx)
     print("test:", json.dumps(tm))
-    cls_break = per_class_breakdown(model, test_rows, args.max_len, device)
+    cls_break = per_class_breakdown(model, test_rows, args.max_len, device,
+                                     label_to_idx, none_idx)
     print("per-class test:")
     for k, v in sorted(cls_break.items()):
         print(f"  {k}: {v}")

@@ -19,14 +19,18 @@ therefore (author - min_author + 1).
 import argparse, json, os, pathlib, shutil, subprocess, sys, tempfile
 
 
-def chain_a_author_range(pdb_path):
+def chain_author_range(pdb_path, chain="A"):
     lo, hi = None, None
     for line in open(pdb_path):
-        if line.startswith("ATOM") and line[21] == "A":
+        if line.startswith("ATOM") and line[21] == chain:
             r = int(line[22:26])
             lo = r if lo is None else min(lo, r)
             hi = r if hi is None else max(hi, r)
     return lo, hi
+
+
+# back-compat alias for older callers
+chain_a_author_range = chain_author_range
 
 
 def run(cmd, env=None):
@@ -46,6 +50,9 @@ def main():
     ap.add_argument("--active-sites", default="data/targets/active_sites")
     ap.add_argument("--residue-maps", default="data/targets/residue_maps")
     ap.add_argument("--out-dir", default="data/variants/mpnn_positives")
+    ap.add_argument("--work-dir", default=None,
+                    help="MPNN scratch directory (default: sibling of "
+                         "--out-dir called _mpnn_work)")
     ap.add_argument("--num-per-temp", type=int, default=500)
     ap.add_argument("--temps", nargs="+", default=["0.1", "0.3"])
     ap.add_argument("--seed", type=int, default=42)
@@ -60,8 +67,9 @@ def main():
     sites = json.load(open(pathlib.Path(args.active_sites, f"{tid}.json")))
     out_dir = pathlib.Path(args.out_dir); out_dir.mkdir(parents=True, exist_ok=True)
 
-    lo, hi = chain_a_author_range(pdb)
-    print(f"[{tid}] chain A author range {lo}-{hi}")
+    chain = sites.get("chain", "A")
+    lo, hi = chain_author_range(pdb, chain)
+    print(f"[{tid}] chain {chain} author range {lo}-{hi}")
 
     # Canonical source of truth: UniProt residue numbers + SIFTS cache.
     from src.data.residue_map import ResidueMap
@@ -77,7 +85,9 @@ def main():
     print(f"[{tid}] fixed mpnn (1-indexed)={fixed_mpnn}")
 
     # keep work dir visible under data/ for debuggability
-    work_base = pathlib.Path("data/variants/_mpnn_work"); work_base.mkdir(parents=True, exist_ok=True)
+    work_base = pathlib.Path(args.work_dir) if args.work_dir else \
+        pathlib.Path(args.out_dir).parent / "_mpnn_work"
+    work_base.mkdir(parents=True, exist_ok=True)
     td = work_base / tid
     if td.exists():
         shutil.rmtree(td)
@@ -93,11 +103,11 @@ def main():
         run(f"python {mpnn}/helper_scripts/parse_multiple_chains.py "
             f"--input_path={stage} --output_path={parsed}")
         run(f"python {mpnn}/helper_scripts/assign_fixed_chains.py "
-            f"--input_path={parsed} --output_path={chains} --chain_list='A'")
+            f"--input_path={parsed} --output_path={chains} --chain_list='{chain}'")
         pos_str = " ".join(str(i) for i in fixed_mpnn) or "0"  # MPNN wants at least one token
         run(f"python {mpnn}/helper_scripts/make_fixed_positions_dict.py "
             f"--input_path={parsed} --output_path={fixed} "
-            f"--chain_list='A' --position_list='{pos_str}'")
+            f"--chain_list='{chain}' --position_list='{pos_str}'")
 
         mpnn_out = td / "out"; mpnn_out.mkdir()
         for temp in args.temps:

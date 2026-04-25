@@ -24,10 +24,25 @@ import argparse, json, pathlib, sys, urllib.request, urllib.error
 FEATURE_TYPES = {"active site", "binding site", "metal binding", "disulfide bond", "site"}
 
 
-def fetch_json(url):
-    req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read())
+_UA = "capiti/0.1 (https://github.com/mcnoonz/capiti)"
+
+
+def fetch_json(url, tries=4):
+    import time, urllib.error
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/json", "User-Agent": _UA,
+    })
+    delay = 1.0
+    for attempt in range(tries):
+        try:
+            time.sleep(0.1)
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < tries - 1:
+                time.sleep(delay); delay *= 2
+                continue
+            raise
 
 
 def residue_listing(pdb_id, chain):
@@ -175,6 +190,42 @@ def process(target_id, pdb_id, chain, out_dir):
     return rec
 
 
+def process_af(target_id, unp_acc, chain):
+    """Active-sites record for an AlphaFold-predicted target. AF
+    structures are already UniProt-indexed by construction, so there's
+    no SIFTS to consult: UniProt residue N == AF residue N. The
+    `fixed_positions_pdb` column is the same list as
+    `fixed_positions_uniprot` (author numbering in the AF PDB equals
+    UniProt numbering)."""
+    rec = dict(target=target_id, pdb=f"AF:{unp_acc}", chain=chain,
+               uniprot=unp_acc, features=[],
+               fixed_positions_pdb=[], fixed_positions_uniprot=[],
+               notes="")
+    try:
+        feats = uniprot_features(unp_acc)
+    except Exception as e:
+        rec["notes"] = f"UniProt fetch failed: {e}"
+        return rec
+    fixed_unp = set()
+    for f in feats:
+        s, e = f.get("start"), f.get("end")
+        if s is None or e is None:
+            continue
+        ftype = (f.get("type") or "").lower()
+        if ftype == "disulfide bond" and s != e:
+            positions = (s, e)
+        else:
+            positions = range(s, e + 1)
+        for p in positions:
+            fixed_unp.add(p)
+        rec["features"].append(dict(type=f["type"], unp_start=s, unp_end=e,
+                                    description=f["description"]))
+    rec["fixed_positions_uniprot"] = sorted(fixed_unp)
+    # For AF, PDB author numbers = UniProt numbers by construction.
+    rec["fixed_positions_pdb"] = sorted(fixed_unp)
+    return rec
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", required=True,
@@ -196,13 +247,18 @@ def main():
         rows.append((tid, pdb, chain))
 
     for tid, pdb, chain in rows:
-        print(f"[{tid}] {pdb} chain {chain} ...", flush=True)
-        rec = process(tid, pdb, chain, out)
+        if pdb.startswith("AF:"):
+            acc = pdb.split(":", 1)[1]
+            print(f"[{tid}] AlphaFold {acc} chain {chain} ...", flush=True)
+            rec = process_af(tid, acc, chain)
+        else:
+            print(f"[{tid}] {pdb} chain {chain} ...", flush=True)
+            rec = process(tid, pdb, chain, out)
         (out / f"{tid}.json").write_text(json.dumps(rec, indent=2))
-        n = len(rec["fixed_positions_pdb"])
-        unp = rec["uniprot"] or "-"
-        note = (" [" + rec["notes"].strip() + "]") if rec["notes"] else ""
-        print(f"  uniprot={unp}  n_fixed={n}  n_features={len(rec['features'])}{note}",
+        n = len(rec.get("fixed_positions_uniprot", []))
+        unp = rec.get("uniprot") or "-"
+        note = (" [" + rec.get("notes", "").strip() + "]") if rec.get("notes") else ""
+        print(f"  uniprot={unp}  n_fixed={n}  n_features={len(rec.get('features', []))}{note}",
               flush=True)
 
 

@@ -76,7 +76,7 @@ def render_torchview(model, out_path, input_data, depth, expand_nested, fmt):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--max-len", type=int, default=800)
+    ap.add_argument("--max-len", type=int, default=1200)
     ap.add_argument("--channels", type=int, default=64)
     ap.add_argument("--embed-dim", type=int, default=32)
     ap.add_argument("--num-blocks", type=int, default=5)

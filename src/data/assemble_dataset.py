@@ -32,7 +32,18 @@ def read_fasta(p):
         yield name, "".join(seq)
 
 
-TARGETS = [f"T{i}" for i in range(1, 10)]
+def load_targets_tsv(path):
+    """Read a targets.tsv (# target_id pdb_id chain) and return the
+    ordered list of target ids."""
+    out = []
+    for line in open(path):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        if parts:
+            out.append(parts[0])
+    return out
 
 
 def main():
@@ -41,12 +52,18 @@ def main():
     ap.add_argument("--primary-seqs", default="data/targets/primary_sequences")
     ap.add_argument("--variants", default="data/variants")
     ap.add_argument("--decoys", default="data/decoys")
+    ap.add_argument("--targets-tsv", default="configs/targets.tsv",
+                    help="list of target ids (column 1)")
     ap.add_argument("--min-len", type=int, default=30)
-    ap.add_argument("--max-len", type=int, default=800)
+    ap.add_argument("--max-len", type=int, default=1200)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--val-frac", type=float, default=0.10)
     ap.add_argument("--test-frac", type=float, default=0.10)
     args = ap.parse_args()
+
+    TARGETS = load_targets_tsv(args.targets_tsv)
+    print(f"[assemble_dataset] {len(TARGETS)} targets from "
+          f"{args.targets_tsv}", flush=True)
 
     random.seed(args.seed)
     rows = []

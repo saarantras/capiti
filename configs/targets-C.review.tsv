@@ -1,0 +1,12 @@
+# target_id	pdb_id	chain	review_reason
+T-C4	4V6V	A1	best resolution 9.8 A (> 3.5) method=1
+T-C5	2P7K	A	best resolution 99.0 A (> 3.5) method=4
+T-C194	2MXE	A	best resolution 99.0 A (> 3.5) method=2
+T-C92	6YI4	AAA	CIF-only, no legacy PDB
+T-C150	7NHL	0	CIF-only, no legacy PDB
+T-C172	7SFR	l	CIF-only, no legacy PDB
+T-C202	6HA8	V	CIF-only, no legacy PDB
+T-C217	6X6I	AAA	CIF-only, no legacy PDB
+T-C223	4V67	BE	CIF-only, no legacy PDB
+T-C240	8RTZ	AAA=234-279, AAA=295-588	CIF-only, no legacy PDB
+T-C242	8QCQ	e	CIF-only, no legacy PDB

@@ -2,6 +2,78 @@
 
 Research-grade. Entries are per dev session, not per release.
 
+## Adding capiti-C and capiti-E sets
+
+Two new bundled sets. Pipeline scaled from 9 (ab9) to 235 + 59 = 294
+targets end-to-end.
+
+- New per-set data layout at `data/<SET>/targets/...`. All downstream
+  scripts parameterized by path flags or `--set` env var.
+- AlphaFold support: `AF:<accession>` prefix triggers AFDB fetch
+  (resolving current model version via the AFDB API) and identity
+  UniProt mapping. 7 of 59 E targets are AF-only.
+- `pick_best_structures.py` collapses multiple PDB candidates per
+  target to one row per target (X-ray > EM > NMR, best resolution,
+  chain A preferred). Resolution cap raised 3.0 -> 3.5 A.
+- `max_len` bumped 800 -> 1200 everywhere to fit longer C targets.
+- `train.py` / `assemble_dataset.py` now derive the target list
+  dynamically — no more hardcoded `T1..T9`.
+- All EBI / RCSB / UniProt / AFDB fetches now carry a user-agent and
+  retry with backoff on 429 / 5xx; 100 ms polite pacing between
+  requests. Needed at 200+ request scale.
+- Bundle layout: `capiti/_model/{ab9,C,E}/capiti.{onnx,meta.json}`
+  selectable via `--set` at CLI invocation.
+
+### Results
+
+| set | targets | AUC (no gate) | AUC (+gate) | ala_scan +gate |
+|---|---|---|---|---|
+| ab9 | 9   | 0.997 | 1.000 | 1.000 |
+| E   | 59  | 0.997 | 0.984 | 0.966 |
+| C   | 235 | 0.986 | 0.970 | 0.953 |
+
+Side-by-side writeup at `docs/benchmark/CE_summary.md`. Per-set
+artifacts at `docs/benchmark/{v3,E_v1,C_v1}/`.
+
+### Bugs fixed during this scaling
+
+- `src/eval/scorers.py` - both `load_targets()` and
+  `load_gate_mask()` iterated a hardcoded `[T1..T9]` list;
+  generalized to scan the directory.
+- `src/data/generate_mpnn_variants.py` - chain hardcoded as A in three
+  places (assign_fixed_chains, make_fixed_positions_dict, and
+  `chain_a_author_range`); now respects `active_sites["chain"]`.
+  Affected ~10 E targets and ~30 C targets where the chosen PDB
+  chain is B/C/D/G/J/etc. Re-ran those.
+
+### Open follow-ups
+
+- `kmer3_lr` baseline ported to `scipy.sparse` (`_kmer_matrix_sparse`
+  + sklearn `solver='liblinear'`). Memory drops ~50x at k=3, lets
+  the C 318k-row baseline fit in <8 GB. C numbers now in
+  `docs/benchmark/CE_summary.md`.
+- 6 E + 5 C MPNN array slots originally hit the 45-minute time limit
+  and were missing from the v1 dataset. Re-ran with `--time 3:00:00`
+  - all 9 finished (longest 2:55). Datasets and benchmarks above
+  reflect this regenerated set.
+
+### Dropped targets (13 of 307, 4.2%)
+
+Captured in `configs/targets-{C,E}.review.tsv`:
+
+- **10 CIF-only PDBs** (RCSB retired legacy `.pdb` for these, often
+  because the molecule is too large or has multi-char / numeric chain
+  IDs): T-C92, T-C150, T-C172, T-C202, T-C217, T-C223, T-C240, T-C242,
+  T-E52, T-E56. Recoverable with a `.cif -> .pdb` adapter in
+  `setup_set.py`; ProteinMPNN's parser might still complain about the
+  multi-char chains in some of these.
+- **3 too-low-resolution**: T-C4 (EM 9.8 A), T-C194 (NMR only), T-C5
+  (source list had no usable metadata). Can add by loosening the
+  picker's cap per-target.
+
+No retraining on paper here: if we want them back, add the fix and
+regen the affected set.
+
 ## v3 — max pool + inference-time fixed-position gate
 
 Ships as the `ab9` bundled model. At natural threshold (0.5),
