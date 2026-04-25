@@ -85,6 +85,35 @@ def _bundled(set_name, filename):
     return resources.files("capiti").joinpath("_model", set_name, filename)
 
 
+def apply_gate(aa_seq, top_label, gate_data):
+    """Return True if the gate fires (sequence has a mutated active-site
+    residue at the predicted target's fixed positions). False otherwise.
+
+    `gate_data` is the parsed JSON shipped at capiti/_model/<set>/gate.json:
+    a dict mapping target id -> {triples, wt_len, mpnn_len}. Each triple is
+    [wt_idx, mpnn_0idx, expected_aa].
+
+    Coordinate system is picked by sequence length: queries whose AA
+    length matches `wt_len` use wt_idx, queries matching `mpnn_len` use
+    mpnn_0idx. Lengths between fall through (no gate)."""
+    entry = gate_data.get(top_label)
+    if not entry or not entry.get("triples"):
+        return False
+    n = len(aa_seq)
+    if n == entry["wt_len"]:
+        idx_pos = 0   # wt_idx
+    elif n == entry["mpnn_len"]:
+        idx_pos = 1   # mpnn_0idx
+    else:
+        return False
+    for triple in entry["triples"]:
+        j = triple[idx_pos]
+        exp = triple[2]
+        if j is None or not (0 <= j < n) or aa_seq[j] != exp:
+            return True
+    return False
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="capiti",
@@ -97,6 +126,10 @@ def main(argv=None):
                     help="read one sequence from stdin")
     ap.add_argument("--cutoff", type=float, default=0.5,
                     help="probability threshold for TRUE (default 0.5)")
+    ap.add_argument("--no-gate", action="store_true",
+                    help="disable the SIFTS-backed fixed-position gate "
+                         "(catches single-residue active-site knockouts "
+                         "the CNN under-weights). Gate is on by default.")
     ap.add_argument("--set", dest="set_name",
                     default=os.environ.get("CAPITI_SET", "ab9"),
                     choices=AVAILABLE_SETS,
@@ -157,6 +190,15 @@ def main(argv=None):
     labels = meta["labels"]
     none_idx = meta["none_idx"]
 
+    # Optional fixed-position gate. Bundled as gate.json next to the
+    # ONNX. Missing file -> no gate. `--no-gate` disables it.
+    gate_data = None
+    if not args.no_gate:
+        gate_path = str(_bundled(args.set_name, "gate.json"))
+        if os.path.exists(gate_path):
+            with open(gate_path) as fh:
+                gate_data = json.load(fh)
+
     # respect tight thread budgets on small devices
     so = ort.SessionOptions()
     so.intra_op_num_threads = int(os.environ.get("CAPITI_THREADS", "1"))
@@ -192,6 +234,20 @@ def main(argv=None):
     probs = softmax(logits)
     inset = 1.0 - probs[:, none_idx]
     top = probs.argmax(axis=-1)
+
+    # For the gate, pick the highest-probability NON-none class as the
+    # presumed target Ti. Capiti's argmax may itself be "none"; we still
+    # want the gate's reference target.
+    top_target_idx = np.zeros(len(probs), dtype=np.int64)
+    for i, row in enumerate(probs):
+        masked = row.copy()
+        masked[none_idx] = -1.0
+        top_target_idx[i] = int(masked.argmax())
+
+    if gate_data is not None:
+        for i, (_, _, aa) in enumerate(metas):
+            if apply_gate(aa, labels[top_target_idx[i]], gate_data):
+                inset[i] = 0.0
 
     any_true = False
     for (name, nt, aa), p_inset, top_idx in zip(metas, inset, top):

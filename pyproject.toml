@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "capiti"
-version = "0.0.2"
+version = "0.1.0"
 description = "Tiny protein-function classifier distilled from ProteinMPNN, for edge deployment."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -46,4 +46,4 @@ include = ["capiti*"]
 exclude = ["src*", "tests*", "third_party*", "scripts*", "data*", "notebooks*", "configs*", "logs*"]
 
 [tool.setuptools.package-data]
-capiti = ["_model/*/*.onnx", "_model/*/*.json", "_model/*/README.md"]
+capiti = ["_model/*/*.onnx", "_model/*/*.json", "_model/*/README.md", "_model/*/gate.json"]

@@ -37,14 +37,14 @@ echo ATGCGT... | capiti --stdin
 
 ### Reference sets
 
-`capiti` ships multiple bundled reference sets, selectable at invocation
-time. Use `--set NAME` (or the `CAPITI_SET` env var).
+`capiti` ships three bundled reference sets, selectable at invocation
+time via `--set NAME` (or `CAPITI_SET`).
 
-| set | status | description |
+| set | targets | description |
 |---|---|---|
-| `ab9` | available | 9 soluble enzymes (several beta-lactamases relevant to antibiotic resistance, plus other enzymes). Default. |
-| `C`   | planned   | TBA. |
-| `E`   | planned   | TBA. |
+| `ab9` | 9   | Beta-lactamases relevant to antibiotic resistance plus other soluble enzymes. Default. |
+| `E`   | 59  | Larger enzyme panel (54 PDB + 5 AlphaFold-only entries). |
+| `C`   | 235 | Broad enzyme panel sourced from PDB. |
 
 ```
 capiti ATGCGT... --set ab9
@@ -52,18 +52,41 @@ capiti --fasta seqs.fa --set C
 CAPITI_SET=E capiti --stdin
 ```
 
+### Inference-time gate
+
+Capiti pairs the CNN with a SIFTS-backed fixed-position gate by
+default: if the model picks a target Ti and the query has a mutated
+residue at any of Ti's catalytic / active-site positions, the in-set
+score is forced to 0. This catches single-residue active-site
+knockouts the masked-mean CNN under-weights. Disable with `--no-gate`.
+
 Exit code is 0 on TRUE, 1 on FALSE, suitable for shell pipelines:
 
 ```
 capiti ATGCGT... && echo "in set" || echo "not in set"
 ```
 
+## Benchmarks
+
+On the held-out test split for each set (gate on, natural threshold):
+
+| set | targets | AUC | mpnn_pos | ala_scan |
+|---|---|---|---|---|
+| ab9 | 9   | 1.000 | 0.999 | 1.000 |
+| E   | 59  | 0.984 | 0.983 | 0.966 |
+| C   | 235 | 0.970 | 0.964 | 0.953 |
+
+Side-by-side comparison with BLAST and k-mer baselines at
+[`docs/benchmark/CE_summary.md`](docs/benchmark/CE_summary.md). Per-set
+ROC, PR, per-class plots at [`docs/benchmark/v3/`](docs/benchmark/v3/),
+[`docs/benchmark/E_v1/`](docs/benchmark/E_v1/),
+[`docs/benchmark/C_v1/`](docs/benchmark/C_v1/).
+
 ## Status
 
-The 0.0.x line is research-grade. The CLI surface (flags, stdin/FASTA
-behaviour, exit codes) is stable; bundled models will be retrained and
-updated between 0.0.x releases, and should not be used for anything
-operational.
+Research-grade. The CLI surface (flags, stdin/FASTA behaviour, exit
+codes) is stable; bundled models may be retrained and updated between
+0.x releases. Not for operational use.
 
 ## License
 
