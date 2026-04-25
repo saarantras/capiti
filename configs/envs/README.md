@@ -1,6 +1,6 @@
 # Environments
 
-Two conda envs:
+Three conda envs:
 
 - `capiti-fold` (`esmfold.yml`, install path `.envs/esmfold`) — folding
   oracle, variant generation, student training. Name kept for backwards
@@ -9,6 +9,8 @@ Two conda envs:
   BLAST + k-mer baselines and the benchmark pipeline in `src/eval/`.
   Kept separate from `capiti-fold` so its torch/CUDA pins stay untouched
   by bioconda `blast` and its glibc-sensitive deps.
+- `capiti_env` (`pi.yml`) — Raspberry Pi runtime for ONNX inference and
+  the GPIO interrupt helper in `pi/`.
 
 ## capiti-fold
 
@@ -141,3 +143,41 @@ python -m src.eval.benchmark \
 
 Writes `scores.tsv`, `metrics.json`, `thresholds.json`, `report.md`, and
 ROC / PR / per-class / score-distribution / delta plots to `--out-dir`.
+
+## capiti_env (Raspberry Pi)
+
+Runtime env on the Pi for edge inference and the GPIO interrupt
+helper (`pi/capiti_interrupt.py`), which pulses GPIO17 to signal an
+abort to the Uno/emusynth side.
+
+Spec is `pi.yml`:
+
+- `python=3.11`, `numpy`, `onnxruntime` — core capiti inference deps.
+- `swig` (conda-forge) — build-time requirement for the `lgpio`
+  Python bindings.
+- `gpiozero`, `lgpio` (pip) — GPIO control. `gpiozero` defaults to the
+  `lgpio` backend on Bookworm.
+
+### Install
+
+```
+mamba env create -f configs/envs/pi.yml
+```
+
+`lgpio` builds from source against `liblgpio` headers, so the host
+needs them first:
+
+```
+sudo apt install -y liblgpio-dev
+```
+
+(`liblgpio1` and `python3-lgpio` ship by default on Raspberry Pi OS
+Bookworm; only the `-dev` package is missing.)
+
+### Run the interrupt
+
+```
+conda activate capiti_env
+python pi/capiti_interrupt.py            # single 100 ms HIGH pulse on GPIO17
+python pi/capiti_interrupt.py --pin 17 --hold-ms 100
+```

@@ -1,0 +1,12 @@
+name: capiti_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - onnxruntime
+  - swig
+  - pip
+  - pip:
+      - gpiozero
+      - lgpio
