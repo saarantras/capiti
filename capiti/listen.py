@@ -2,23 +2,31 @@
 reconstruct the nucleotide sequence the synthesizer is delivering.
 
 Wiring (Pi 4, BCM numbering):
-    Uno D2 -> GPIO5  (29)   A (amidite)
-    Uno D3 -> GPIO6  (31)   G (amidite)
-    Uno D4 -> GPIO13 (33)   C (amidite)
-    Uno D5 -> GPIO19 (35)   T (amidite)
-    Uno D6 -> GPIO26 (37)   TET (activator / strobe)
-    Uno GND -> Pi GND       common ground required.
+    Uno D2  -> GPIO5  (29)   A (amidite)
+    Uno D3  -> GPIO6  (31)   G (amidite)
+    Uno D4  -> GPIO13 (33)   C (amidite)
+    Uno D5  -> GPIO19 (35)   T (amidite)
+    Uno D6  -> GPIO26 (37)   TET (activator / strobe)
+    Uno D7  -> GPIO22 (15)   DONE (rising edge stops capture; optional)
+    Uno GND -> Pi GND        common ground required.
 
 Each base line is held HIGH while its amidite valve is open; the TET line
 pulses HIGH once per coupling cycle. We treat TET as the clock: on every
 TET rising edge, we sample the four base lines, and whichever is HIGH at
-that instant is the base being incorporated.
+that instant is the base being incorporated. Sampling at the strobe rather
+than counting edges on the base lines means homopolymers are read
+correctly (back-to-back identical bases just hold the same line HIGH
+across multiple TET pulses).
 
 Usage:
-    capiti-listen                      # stream to stdout, Ctrl-C to stop
+    capiti-listen                      # stream to stdout, DONE or Ctrl-C stops
     capiti-listen --out seq.txt        # also append each base to a file
-    capiti-listen --max-len 200        # stop after 200 bases
-    capiti-listen --quiet              # only print final sequence
+    capiti-listen --max-len 200        # additionally stop after 200 bases
+    capiti-listen --done-pin 0         # disable DONE; rely on Ctrl-C / max-len
+    capiti-listen --quiet              # only print final sequence at end
+
+Pipe into the classifier:
+    capiti-listen --quiet | capiti --stdin
 """
 from __future__ import annotations
 import argparse
@@ -99,9 +107,17 @@ def main(argv=None):
         if len(high) == 1:
             base = high[0]
         elif not high:
-            base = "N"  # strobe with no amidite line HIGH
+            base = "N"
+            sys.stderr.write(
+                f"\ncapiti-listen[{len(seq)+1}]: TET pulse with no amidite "
+                f"line HIGH -> N (check wiring / settle-us)\n"
+            )
         else:
-            base = "N"  # multiple lines HIGH -> ambiguous
+            base = "N"
+            sys.stderr.write(
+                f"\ncapiti-listen[{len(seq)+1}]: TET pulse with multiple "
+                f"amidite lines HIGH ({'+'.join(high)}) -> N\n"
+            )
         seq.append(base)
         if out_fh is not None:
             out_fh.write(base)
@@ -127,6 +143,9 @@ def main(argv=None):
     signal.signal(signal.SIGINT, lambda *_: done.set())
     try:
         done.wait()
+        # Drain: if DONE/SIGINT raced an in-flight strobe callback, give it
+        # a chance to finish appending before we tear the device down.
+        time.sleep(max(settle, 0.05))
     finally:
         strobe.close()
         if done_dev is not None:
