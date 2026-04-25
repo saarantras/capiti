@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "capiti"
-version = "0.0.2"
+version = "0.0.4"
 description = "Tiny protein-function classifier distilled from ProteinMPNN, for edge deployment."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -32,11 +32,16 @@ dependencies = [
   "onnxruntime >= 1.15",
 ]
 
+[project.optional-dependencies]
+pi = ["gpiozero", "lgpio"]
+
 [project.urls]
 Homepage = "https://github.com/mcnoonz/capiti"
 
 [project.scripts]
 capiti = "capiti.cli:main"
+capiti-interrupt = "capiti.interrupt:main"
+capiti-listen = "capiti.listen:main"
 
 [tool.setuptools]
 package-dir = { "" = "." }

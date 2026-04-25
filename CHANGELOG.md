@@ -2,6 +2,28 @@
 
 Research-grade. Entries are per dev session, not per release.
 
+## capiti-listen CLI (0.0.4)
+
+New `capiti-listen` console script: reads amidite + activator pulses on
+the Pi GPIO and reconstructs the synthesized sequence in real time. TET
+(GPIO26 default) is the strobe; on each rising edge we sample the four
+base lines (A=GPIO5, G=GPIO6, C=GPIO13, T=GPIO19) and emit the HIGH one
+(or `N` if zero or multiple). Optional DONE pin (GPIO22 default) ends
+capture on rising edge; `--done-pin 0` disables. Strobe sampling
+correctly handles homopolymers, which a naive base-line edge counter
+would not.
+
+## capiti-interrupt CLI (0.0.3)
+
+New `capiti-interrupt` console script: pulses a Pi GPIO pin HIGH to
+abort an in-progress emusynth run. Implementation lives in
+`capiti/interrupt.py`; depends on `gpiozero` (lazy-imported), pulled
+in by the new `pi` extras group: `pip install 'capiti[pi]'`. Host
+also needs `liblgpio-dev` so the `lgpio` backend can build.
+
+The standalone `pi/capiti_interrupt.py` script in the repo is now
+redundant with the packaged CLI.
+
 ## Adding capiti-C and capiti-E sets
 
 Two new bundled sets. Pipeline scaled from 9 (ab9) to 235 + 59 = 294
