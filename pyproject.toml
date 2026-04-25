@@ -32,11 +32,18 @@ dependencies = [
   "onnxruntime >= 1.15",
 ]
 
+[project.optional-dependencies]
+pi = ["gpiozero", "lgpio"]
+
 [project.urls]
 Homepage = "https://github.com/mcnoonz/capiti"
 
 [project.scripts]
 capiti = "capiti.cli:main"
+capiti-interrupt = "capiti.interrupt:main"
+capiti-listen = "capiti.listen:main"
+capiti-orf = "capiti.seq:orf_main"
+capiti-translate = "capiti.seq:translate_main"
 
 [tool.setuptools]
 package-dir = { "" = "." }
