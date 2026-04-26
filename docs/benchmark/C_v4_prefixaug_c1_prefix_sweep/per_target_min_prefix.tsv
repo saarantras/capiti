@@ -1,0 +1,673 @@
+method	target	min_prefix_for_tpr
+blast_nearest_wt	T-C1	
+blast_nearest_wt	T-C10	
+blast_nearest_wt	T-C100	
+blast_nearest_wt	T-C101	
+blast_nearest_wt	T-C102	
+blast_nearest_wt	T-C103	
+blast_nearest_wt	T-C104	
+blast_nearest_wt	T-C105	
+blast_nearest_wt	T-C106	
+blast_nearest_wt	T-C107	
+blast_nearest_wt	T-C108	
+blast_nearest_wt	T-C109	
+blast_nearest_wt	T-C11	0.1
+blast_nearest_wt	T-C110	
+blast_nearest_wt	T-C111	
+blast_nearest_wt	T-C112	
+blast_nearest_wt	T-C113	
+blast_nearest_wt	T-C114	
+blast_nearest_wt	T-C115	
+blast_nearest_wt	T-C116	
+blast_nearest_wt	T-C118	
+blast_nearest_wt	T-C119	
+blast_nearest_wt	T-C12	
+blast_nearest_wt	T-C121	
+blast_nearest_wt	T-C122	
+blast_nearest_wt	T-C123	
+blast_nearest_wt	T-C124	
+blast_nearest_wt	T-C125	
+blast_nearest_wt	T-C126	
+blast_nearest_wt	T-C127	
+blast_nearest_wt	T-C128	
+blast_nearest_wt	T-C129	
+blast_nearest_wt	T-C13	
+blast_nearest_wt	T-C130	
+blast_nearest_wt	T-C131	
+blast_nearest_wt	T-C132	
+blast_nearest_wt	T-C133	
+blast_nearest_wt	T-C134	
+blast_nearest_wt	T-C135	
+blast_nearest_wt	T-C136	
+blast_nearest_wt	T-C137	
+blast_nearest_wt	T-C138	
+blast_nearest_wt	T-C139	
+blast_nearest_wt	T-C14	
+blast_nearest_wt	T-C140	
+blast_nearest_wt	T-C141	
+blast_nearest_wt	T-C142	
+blast_nearest_wt	T-C143	
+blast_nearest_wt	T-C144	
+blast_nearest_wt	T-C145	
+blast_nearest_wt	T-C146	
+blast_nearest_wt	T-C147	
+blast_nearest_wt	T-C148	
+blast_nearest_wt	T-C149	
+blast_nearest_wt	T-C15	0.1
+blast_nearest_wt	T-C151	
+blast_nearest_wt	T-C152	
+blast_nearest_wt	T-C153	
+blast_nearest_wt	T-C154	
+blast_nearest_wt	T-C155	
+blast_nearest_wt	T-C156	
+blast_nearest_wt	T-C157	
+blast_nearest_wt	T-C158	
+blast_nearest_wt	T-C159	
+blast_nearest_wt	T-C16	
+blast_nearest_wt	T-C160	
+blast_nearest_wt	T-C161	
+blast_nearest_wt	T-C162	0.7
+blast_nearest_wt	T-C163	
+blast_nearest_wt	T-C164	
+blast_nearest_wt	T-C165	
+blast_nearest_wt	T-C166	
+blast_nearest_wt	T-C167	
+blast_nearest_wt	T-C168	
+blast_nearest_wt	T-C169	
+blast_nearest_wt	T-C170	
+blast_nearest_wt	T-C171	
+blast_nearest_wt	T-C173	
+blast_nearest_wt	T-C174	
+blast_nearest_wt	T-C175	
+blast_nearest_wt	T-C176	
+blast_nearest_wt	T-C177	
+blast_nearest_wt	T-C178	
+blast_nearest_wt	T-C179	
+blast_nearest_wt	T-C18	
+blast_nearest_wt	T-C180	
+blast_nearest_wt	T-C181	
+blast_nearest_wt	T-C182	
+blast_nearest_wt	T-C183	
+blast_nearest_wt	T-C184	
+blast_nearest_wt	T-C185	
+blast_nearest_wt	T-C186	
+blast_nearest_wt	T-C187	
+blast_nearest_wt	T-C188	
+blast_nearest_wt	T-C189	
+blast_nearest_wt	T-C19	
+blast_nearest_wt	T-C190	
+blast_nearest_wt	T-C191	
+blast_nearest_wt	T-C192	
+blast_nearest_wt	T-C195	
+blast_nearest_wt	T-C196	
+blast_nearest_wt	T-C197	
+blast_nearest_wt	T-C198	
+blast_nearest_wt	T-C199	
+blast_nearest_wt	T-C2	
+blast_nearest_wt	T-C20	
+blast_nearest_wt	T-C200	
+blast_nearest_wt	T-C201	
+blast_nearest_wt	T-C203	
+blast_nearest_wt	T-C204	
+blast_nearest_wt	T-C205	
+blast_nearest_wt	T-C206	
+blast_nearest_wt	T-C207	
+blast_nearest_wt	T-C208	
+blast_nearest_wt	T-C209	
+blast_nearest_wt	T-C21	
+blast_nearest_wt	T-C210	
+blast_nearest_wt	T-C211	
+blast_nearest_wt	T-C212	
+blast_nearest_wt	T-C213	0.1
+blast_nearest_wt	T-C214	
+blast_nearest_wt	T-C215	
+blast_nearest_wt	T-C216	
+blast_nearest_wt	T-C218	
+blast_nearest_wt	T-C22	
+blast_nearest_wt	T-C220	
+blast_nearest_wt	T-C221	
+blast_nearest_wt	T-C222	
+blast_nearest_wt	T-C224	
+blast_nearest_wt	T-C225	
+blast_nearest_wt	T-C226	
+blast_nearest_wt	T-C227	
+blast_nearest_wt	T-C228	
+blast_nearest_wt	T-C229	
+blast_nearest_wt	T-C23	
+blast_nearest_wt	T-C230	
+blast_nearest_wt	T-C231	
+blast_nearest_wt	T-C232	
+blast_nearest_wt	T-C233	0.1
+blast_nearest_wt	T-C234	
+blast_nearest_wt	T-C235	
+blast_nearest_wt	T-C236	
+blast_nearest_wt	T-C237	
+blast_nearest_wt	T-C238	
+blast_nearest_wt	T-C239	
+blast_nearest_wt	T-C24	
+blast_nearest_wt	T-C241	
+blast_nearest_wt	T-C244	
+blast_nearest_wt	T-C245	
+blast_nearest_wt	T-C246	
+blast_nearest_wt	T-C25	
+blast_nearest_wt	T-C26	
+blast_nearest_wt	T-C27	
+blast_nearest_wt	T-C28	
+blast_nearest_wt	T-C29	
+blast_nearest_wt	T-C3	
+blast_nearest_wt	T-C30	
+blast_nearest_wt	T-C32	
+blast_nearest_wt	T-C33	
+blast_nearest_wt	T-C34	
+blast_nearest_wt	T-C35	
+blast_nearest_wt	T-C36	
+blast_nearest_wt	T-C41	
+blast_nearest_wt	T-C42	
+blast_nearest_wt	T-C43	
+blast_nearest_wt	T-C44	
+blast_nearest_wt	T-C45	
+blast_nearest_wt	T-C46	
+blast_nearest_wt	T-C47	
+blast_nearest_wt	T-C48	
+blast_nearest_wt	T-C49	
+blast_nearest_wt	T-C50	
+blast_nearest_wt	T-C51	
+blast_nearest_wt	T-C52	
+blast_nearest_wt	T-C53	
+blast_nearest_wt	T-C54	
+blast_nearest_wt	T-C55	
+blast_nearest_wt	T-C56	
+blast_nearest_wt	T-C57	
+blast_nearest_wt	T-C58	
+blast_nearest_wt	T-C59	
+blast_nearest_wt	T-C6	
+blast_nearest_wt	T-C60	
+blast_nearest_wt	T-C61	
+blast_nearest_wt	T-C62	
+blast_nearest_wt	T-C63	
+blast_nearest_wt	T-C64	
+blast_nearest_wt	T-C65	
+blast_nearest_wt	T-C66	
+blast_nearest_wt	T-C67	
+blast_nearest_wt	T-C68	
+blast_nearest_wt	T-C69	
+blast_nearest_wt	T-C7	0.1
+blast_nearest_wt	T-C70	
+blast_nearest_wt	T-C71	
+blast_nearest_wt	T-C72	
+blast_nearest_wt	T-C73	
+blast_nearest_wt	T-C74	
+blast_nearest_wt	T-C75	
+blast_nearest_wt	T-C76	
+blast_nearest_wt	T-C77	
+blast_nearest_wt	T-C78	
+blast_nearest_wt	T-C79	
+blast_nearest_wt	T-C8	
+blast_nearest_wt	T-C80	
+blast_nearest_wt	T-C81	
+blast_nearest_wt	T-C82	
+blast_nearest_wt	T-C83	
+blast_nearest_wt	T-C84	
+blast_nearest_wt	T-C85	
+blast_nearest_wt	T-C86	
+blast_nearest_wt	T-C87	
+blast_nearest_wt	T-C88	
+blast_nearest_wt	T-C89	
+blast_nearest_wt	T-C9	
+blast_nearest_wt	T-C90	
+blast_nearest_wt	T-C91	
+blast_nearest_wt	T-C93	
+blast_nearest_wt	T-C94	
+blast_nearest_wt	T-C95	
+blast_nearest_wt	T-C96	
+blast_nearest_wt	T-C97	
+blast_nearest_wt	T-C98	
+blast_nearest_wt	T-C99	
+capiti	T-C1	0.1
+capiti	T-C10	0.2
+capiti	T-C100	0.4
+capiti	T-C101	0.8
+capiti	T-C102	0.5
+capiti	T-C103	0.4
+capiti	T-C104	0.2
+capiti	T-C105	0.6
+capiti	T-C106	0.5
+capiti	T-C107	0.3
+capiti	T-C108	0.4
+capiti	T-C109	0.4
+capiti	T-C11	0.3
+capiti	T-C110	0.5
+capiti	T-C111	0.4
+capiti	T-C112	0.4
+capiti	T-C113	0.5
+capiti	T-C114	0.4
+capiti	T-C115	0.2
+capiti	T-C116	0.3
+capiti	T-C118	0.2
+capiti	T-C119	0.2
+capiti	T-C12	0.1
+capiti	T-C121	0.2
+capiti	T-C122	0.4
+capiti	T-C123	0.2
+capiti	T-C124	0.3
+capiti	T-C125	0.8
+capiti	T-C126	0.6
+capiti	T-C127	0.2
+capiti	T-C128	0.1
+capiti	T-C129	0.1
+capiti	T-C13	0.1
+capiti	T-C130	0.2
+capiti	T-C131	0.2
+capiti	T-C132	0.1
+capiti	T-C133	0.2
+capiti	T-C134	0.2
+capiti	T-C135	0.2
+capiti	T-C136	0.2
+capiti	T-C137	0.2
+capiti	T-C138	0.1
+capiti	T-C139	0.2
+capiti	T-C14	0.4
+capiti	T-C140	0.7
+capiti	T-C141	0.7
+capiti	T-C142	0.3
+capiti	T-C143	
+capiti	T-C144	0.8
+capiti	T-C145	0.7
+capiti	T-C146	0.7
+capiti	T-C147	0.6
+capiti	T-C148	
+capiti	T-C149	0.6
+capiti	T-C15	0.3
+capiti	T-C151	0.4
+capiti	T-C152	0.1
+capiti	T-C153	0.1
+capiti	T-C154	0.4
+capiti	T-C155	
+capiti	T-C156	0.1
+capiti	T-C157	0.1
+capiti	T-C158	
+capiti	T-C159	0.1
+capiti	T-C16	0.2
+capiti	T-C160	0.5
+capiti	T-C161	0.5
+capiti	T-C162	0.6
+capiti	T-C163	
+capiti	T-C164	0.2
+capiti	T-C165	0.3
+capiti	T-C166	0.1
+capiti	T-C167	0.1
+capiti	T-C168	0.3
+capiti	T-C169	1.0
+capiti	T-C170	0.1
+capiti	T-C171	0.1
+capiti	T-C173	0.2
+capiti	T-C174	0.4
+capiti	T-C175	0.2
+capiti	T-C176	0.2
+capiti	T-C177	0.2
+capiti	T-C178	
+capiti	T-C179	0.2
+capiti	T-C18	0.4
+capiti	T-C180	0.2
+capiti	T-C181	0.4
+capiti	T-C182	0.3
+capiti	T-C183	0.2
+capiti	T-C184	0.1
+capiti	T-C185	0.2
+capiti	T-C186	0.2
+capiti	T-C187	0.2
+capiti	T-C188	0.5
+capiti	T-C189	0.5
+capiti	T-C19	0.5
+capiti	T-C190	0.2
+capiti	T-C191	0.1
+capiti	T-C192	0.1
+capiti	T-C195	0.3
+capiti	T-C196	0.2
+capiti	T-C197	0.4
+capiti	T-C198	0.3
+capiti	T-C199	0.4
+capiti	T-C2	
+capiti	T-C20	0.3
+capiti	T-C200	0.4
+capiti	T-C201	0.7
+capiti	T-C203	0.2
+capiti	T-C204	0.1
+capiti	T-C205	0.1
+capiti	T-C206	0.6
+capiti	T-C207	0.7
+capiti	T-C208	0.5
+capiti	T-C209	0.3
+capiti	T-C21	0.3
+capiti	T-C210	
+capiti	T-C211	0.5
+capiti	T-C212	
+capiti	T-C213	0.4
+capiti	T-C214	0.1
+capiti	T-C215	0.4
+capiti	T-C216	0.2
+capiti	T-C218	0.2
+capiti	T-C22	0.1
+capiti	T-C220	
+capiti	T-C221	0.4
+capiti	T-C222	0.3
+capiti	T-C224	0.2
+capiti	T-C225	0.4
+capiti	T-C226	0.8
+capiti	T-C227	0.3
+capiti	T-C228	0.3
+capiti	T-C229	0.1
+capiti	T-C23	0.1
+capiti	T-C230	0.4
+capiti	T-C231	0.3
+capiti	T-C232	0.4
+capiti	T-C233	
+capiti	T-C234	0.2
+capiti	T-C235	0.2
+capiti	T-C236	0.4
+capiti	T-C237	0.2
+capiti	T-C238	0.4
+capiti	T-C239	0.1
+capiti	T-C24	0.1
+capiti	T-C241	0.2
+capiti	T-C244	0.3
+capiti	T-C245	0.4
+capiti	T-C246	0.4
+capiti	T-C25	0.3
+capiti	T-C26	0.3
+capiti	T-C27	0.2
+capiti	T-C28	0.4
+capiti	T-C29	0.4
+capiti	T-C3	0.2
+capiti	T-C30	0.1
+capiti	T-C32	0.3
+capiti	T-C33	0.4
+capiti	T-C34	0.4
+capiti	T-C35	0.5
+capiti	T-C36	0.5
+capiti	T-C41	0.4
+capiti	T-C42	0.5
+capiti	T-C43	0.4
+capiti	T-C44	0.4
+capiti	T-C45	0.4
+capiti	T-C46	
+capiti	T-C47	0.2
+capiti	T-C48	0.3
+capiti	T-C49	0.3
+capiti	T-C50	0.7
+capiti	T-C51	0.4
+capiti	T-C52	0.3
+capiti	T-C53	0.3
+capiti	T-C54	0.3
+capiti	T-C55	0.3
+capiti	T-C56	0.3
+capiti	T-C57	0.4
+capiti	T-C58	0.3
+capiti	T-C59	0.3
+capiti	T-C6	0.2
+capiti	T-C60	0.3
+capiti	T-C61	0.3
+capiti	T-C62	0.3
+capiti	T-C63	0.3
+capiti	T-C64	0.3
+capiti	T-C65	0.3
+capiti	T-C66	0.3
+capiti	T-C67	0.3
+capiti	T-C68	0.3
+capiti	T-C69	0.3
+capiti	T-C7	0.4
+capiti	T-C70	0.3
+capiti	T-C71	0.2
+capiti	T-C72	0.3
+capiti	T-C73	0.8
+capiti	T-C74	0.4
+capiti	T-C75	0.5
+capiti	T-C76	0.4
+capiti	T-C77	0.6
+capiti	T-C78	0.2
+capiti	T-C79	0.2
+capiti	T-C8	0.3
+capiti	T-C80	0.4
+capiti	T-C81	
+capiti	T-C82	0.4
+capiti	T-C83	0.3
+capiti	T-C84	0.6
+capiti	T-C85	0.7
+capiti	T-C86	0.2
+capiti	T-C87	0.3
+capiti	T-C88	0.5
+capiti	T-C89	0.4
+capiti	T-C9	0.4
+capiti	T-C90	0.4
+capiti	T-C91	0.4
+capiti	T-C93	0.5
+capiti	T-C94	0.4
+capiti	T-C95	0.5
+capiti	T-C96	0.6
+capiti	T-C97	0.4
+capiti	T-C98	0.4
+capiti	T-C99	0.4
+kmer3_lr	T-C1	
+kmer3_lr	T-C10	
+kmer3_lr	T-C100	
+kmer3_lr	T-C101	
+kmer3_lr	T-C102	
+kmer3_lr	T-C103	
+kmer3_lr	T-C104	
+kmer3_lr	T-C105	0.2
+kmer3_lr	T-C106	0.2
+kmer3_lr	T-C107	0.2
+kmer3_lr	T-C108	0.2
+kmer3_lr	T-C109	0.2
+kmer3_lr	T-C11	0.7
+kmer3_lr	T-C110	
+kmer3_lr	T-C111	0.8
+kmer3_lr	T-C112	0.8
+kmer3_lr	T-C113	0.8
+kmer3_lr	T-C114	0.8
+kmer3_lr	T-C115	
+kmer3_lr	T-C116	0.3
+kmer3_lr	T-C118	0.3
+kmer3_lr	T-C119	0.4
+kmer3_lr	T-C12	0.5
+kmer3_lr	T-C121	0.7
+kmer3_lr	T-C122	0.5
+kmer3_lr	T-C123	
+kmer3_lr	T-C124	
+kmer3_lr	T-C125	0.6
+kmer3_lr	T-C126	
+kmer3_lr	T-C127	1.0
+kmer3_lr	T-C128	0.9
+kmer3_lr	T-C129	
+kmer3_lr	T-C13	
+kmer3_lr	T-C130	
+kmer3_lr	T-C131	0.1
+kmer3_lr	T-C132	0.1
+kmer3_lr	T-C133	
+kmer3_lr	T-C134	
+kmer3_lr	T-C135	
+kmer3_lr	T-C136	
+kmer3_lr	T-C137	
+kmer3_lr	T-C138	
+kmer3_lr	T-C139	0.9
+kmer3_lr	T-C14	0.8
+kmer3_lr	T-C140	
+kmer3_lr	T-C141	0.8
+kmer3_lr	T-C142	
+kmer3_lr	T-C143	
+kmer3_lr	T-C144	
+kmer3_lr	T-C145	
+kmer3_lr	T-C146	
+kmer3_lr	T-C147	
+kmer3_lr	T-C148	
+kmer3_lr	T-C149	0.4
+kmer3_lr	T-C15	0.6
+kmer3_lr	T-C151	
+kmer3_lr	T-C152	0.1
+kmer3_lr	T-C153	0.9
+kmer3_lr	T-C154	1.0
+kmer3_lr	T-C155	
+kmer3_lr	T-C156	
+kmer3_lr	T-C157	
+kmer3_lr	T-C158	
+kmer3_lr	T-C159	0.6
+kmer3_lr	T-C16	0.6
+kmer3_lr	T-C160	0.6
+kmer3_lr	T-C161	
+kmer3_lr	T-C162	0.3
+kmer3_lr	T-C163	
+kmer3_lr	T-C164	
+kmer3_lr	T-C165	0.2
+kmer3_lr	T-C166	0.1
+kmer3_lr	T-C167	0.1
+kmer3_lr	T-C168	0.3
+kmer3_lr	T-C169	
+kmer3_lr	T-C170	0.9
+kmer3_lr	T-C171	
+kmer3_lr	T-C173	0.7
+kmer3_lr	T-C174	
+kmer3_lr	T-C175	0.2
+kmer3_lr	T-C176	0.2
+kmer3_lr	T-C177	0.2
+kmer3_lr	T-C178	
+kmer3_lr	T-C179	0.8
+kmer3_lr	T-C18	1.0
+kmer3_lr	T-C180	0.4
+kmer3_lr	T-C181	0.4
+kmer3_lr	T-C182	
+kmer3_lr	T-C183	0.4
+kmer3_lr	T-C184	0.2
+kmer3_lr	T-C185	0.1
+kmer3_lr	T-C186	0.1
+kmer3_lr	T-C187	0.1
+kmer3_lr	T-C188	0.8
+kmer3_lr	T-C189	
+kmer3_lr	T-C19	0.8
+kmer3_lr	T-C190	0.5
+kmer3_lr	T-C191	
+kmer3_lr	T-C192	
+kmer3_lr	T-C195	
+kmer3_lr	T-C196	0.2
+kmer3_lr	T-C197	
+kmer3_lr	T-C198	1.0
+kmer3_lr	T-C199	0.5
+kmer3_lr	T-C2	
+kmer3_lr	T-C20	
+kmer3_lr	T-C200	0.4
+kmer3_lr	T-C201	
+kmer3_lr	T-C203	0.2
+kmer3_lr	T-C204	0.7
+kmer3_lr	T-C205	0.3
+kmer3_lr	T-C206	
+kmer3_lr	T-C207	
+kmer3_lr	T-C208	
+kmer3_lr	T-C209	0.2
+kmer3_lr	T-C21	
+kmer3_lr	T-C210	
+kmer3_lr	T-C211	
+kmer3_lr	T-C212	
+kmer3_lr	T-C213	0.6
+kmer3_lr	T-C214	
+kmer3_lr	T-C215	
+kmer3_lr	T-C216	
+kmer3_lr	T-C218	
+kmer3_lr	T-C22	1.0
+kmer3_lr	T-C220	
+kmer3_lr	T-C221	0.9
+kmer3_lr	T-C222	0.6
+kmer3_lr	T-C224	
+kmer3_lr	T-C225	
+kmer3_lr	T-C226	0.9
+kmer3_lr	T-C227	
+kmer3_lr	T-C228	0.2
+kmer3_lr	T-C229	
+kmer3_lr	T-C23	0.4
+kmer3_lr	T-C230	0.2
+kmer3_lr	T-C231	0.2
+kmer3_lr	T-C232	0.6
+kmer3_lr	T-C233	
+kmer3_lr	T-C234	0.8
+kmer3_lr	T-C235	
+kmer3_lr	T-C236	
+kmer3_lr	T-C237	
+kmer3_lr	T-C238	
+kmer3_lr	T-C239	0.6
+kmer3_lr	T-C24	0.6
+kmer3_lr	T-C241	1.0
+kmer3_lr	T-C244	
+kmer3_lr	T-C245	0.4
+kmer3_lr	T-C246	0.6
+kmer3_lr	T-C25	1.0
+kmer3_lr	T-C26	0.8
+kmer3_lr	T-C27	0.2
+kmer3_lr	T-C28	0.4
+kmer3_lr	T-C29	0.9
+kmer3_lr	T-C3	
+kmer3_lr	T-C30	
+kmer3_lr	T-C32	0.3
+kmer3_lr	T-C33	
+kmer3_lr	T-C34	0.4
+kmer3_lr	T-C35	
+kmer3_lr	T-C36	0.3
+kmer3_lr	T-C41	0.4
+kmer3_lr	T-C42	0.3
+kmer3_lr	T-C43	
+kmer3_lr	T-C44	0.3
+kmer3_lr	T-C45	0.1
+kmer3_lr	T-C46	
+kmer3_lr	T-C47	0.2
+kmer3_lr	T-C48	
+kmer3_lr	T-C49	0.2
+kmer3_lr	T-C50	0.3
+kmer3_lr	T-C51	0.2
+kmer3_lr	T-C52	
+kmer3_lr	T-C53	0.3
+kmer3_lr	T-C54	0.5
+kmer3_lr	T-C55	0.3
+kmer3_lr	T-C56	
+kmer3_lr	T-C57	0.2
+kmer3_lr	T-C58	0.2
+kmer3_lr	T-C59	
+kmer3_lr	T-C6	0.8
+kmer3_lr	T-C60	0.3
+kmer3_lr	T-C61	0.3
+kmer3_lr	T-C62	0.2
+kmer3_lr	T-C63	0.3
+kmer3_lr	T-C64	0.2
+kmer3_lr	T-C65	
+kmer3_lr	T-C66	0.6
+kmer3_lr	T-C67	0.3
+kmer3_lr	T-C68	0.2
+kmer3_lr	T-C69	0.3
+kmer3_lr	T-C7	1.0
+kmer3_lr	T-C70	0.5
+kmer3_lr	T-C71	
+kmer3_lr	T-C72	0.3
+kmer3_lr	T-C73	
+kmer3_lr	T-C74	0.6
+kmer3_lr	T-C75	0.9
+kmer3_lr	T-C76	0.3
+kmer3_lr	T-C77	0.3
+kmer3_lr	T-C78	0.3
+kmer3_lr	T-C79	0.3
+kmer3_lr	T-C8	
+kmer3_lr	T-C80	0.4
+kmer3_lr	T-C81	
+kmer3_lr	T-C82	0.3
+kmer3_lr	T-C83	0.3
+kmer3_lr	T-C84	
+kmer3_lr	T-C85	0.4
+kmer3_lr	T-C86	0.6
+kmer3_lr	T-C87	0.5
+kmer3_lr	T-C88	
+kmer3_lr	T-C89	0.5
+kmer3_lr	T-C9	
+kmer3_lr	T-C90	0.6
+kmer3_lr	T-C91	0.9
+kmer3_lr	T-C93	0.8
+kmer3_lr	T-C94	
+kmer3_lr	T-C95	
+kmer3_lr	T-C96	0.4
+kmer3_lr	T-C97	
+kmer3_lr	T-C98	0.8
+kmer3_lr	T-C99	0.9

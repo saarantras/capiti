@@ -1,0 +1,178 @@
+method	target	min_prefix_for_tpr
+blast_nearest_wt	T-E1	
+blast_nearest_wt	T-E10	
+blast_nearest_wt	T-E11	
+blast_nearest_wt	T-E12	
+blast_nearest_wt	T-E13	
+blast_nearest_wt	T-E14	
+blast_nearest_wt	T-E15	
+blast_nearest_wt	T-E16	
+blast_nearest_wt	T-E17	
+blast_nearest_wt	T-E18	
+blast_nearest_wt	T-E19	
+blast_nearest_wt	T-E2	
+blast_nearest_wt	T-E20	
+blast_nearest_wt	T-E21	
+blast_nearest_wt	T-E22	
+blast_nearest_wt	T-E23	
+blast_nearest_wt	T-E24	
+blast_nearest_wt	T-E25	
+blast_nearest_wt	T-E26	
+blast_nearest_wt	T-E27	
+blast_nearest_wt	T-E28	
+blast_nearest_wt	T-E29	
+blast_nearest_wt	T-E3	
+blast_nearest_wt	T-E30	
+blast_nearest_wt	T-E31	
+blast_nearest_wt	T-E32	
+blast_nearest_wt	T-E33	
+blast_nearest_wt	T-E34	
+blast_nearest_wt	T-E35	
+blast_nearest_wt	T-E36	
+blast_nearest_wt	T-E37	
+blast_nearest_wt	T-E38	0.1
+blast_nearest_wt	T-E39	
+blast_nearest_wt	T-E4	
+blast_nearest_wt	T-E40	
+blast_nearest_wt	T-E41	
+blast_nearest_wt	T-E42	
+blast_nearest_wt	T-E43	
+blast_nearest_wt	T-E44	
+blast_nearest_wt	T-E45	
+blast_nearest_wt	T-E46	
+blast_nearest_wt	T-E47	
+blast_nearest_wt	T-E48	
+blast_nearest_wt	T-E49	
+blast_nearest_wt	T-E5	
+blast_nearest_wt	T-E50	
+blast_nearest_wt	T-E51	
+blast_nearest_wt	T-E53	
+blast_nearest_wt	T-E54	
+blast_nearest_wt	T-E55	
+blast_nearest_wt	T-E57	0.1
+blast_nearest_wt	T-E58	
+blast_nearest_wt	T-E59	
+blast_nearest_wt	T-E6	
+blast_nearest_wt	T-E60	
+blast_nearest_wt	T-E61	
+blast_nearest_wt	T-E7	
+blast_nearest_wt	T-E8	
+blast_nearest_wt	T-E9	
+capiti	T-E1	0.5
+capiti	T-E10	0.7
+capiti	T-E11	0.9
+capiti	T-E12	0.6
+capiti	T-E13	0.9
+capiti	T-E14	0.6
+capiti	T-E15	0.1
+capiti	T-E16	0.2
+capiti	T-E17	0.1
+capiti	T-E18	0.4
+capiti	T-E19	0.6
+capiti	T-E2	0.5
+capiti	T-E20	0.6
+capiti	T-E21	0.6
+capiti	T-E22	0.1
+capiti	T-E23	0.1
+capiti	T-E24	0.1
+capiti	T-E25	0.9
+capiti	T-E26	0.2
+capiti	T-E27	0.9
+capiti	T-E28	0.3
+capiti	T-E29	0.3
+capiti	T-E3	0.3
+capiti	T-E30	0.1
+capiti	T-E31	0.1
+capiti	T-E32	1.0
+capiti	T-E33	0.1
+capiti	T-E34	1.0
+capiti	T-E35	0.8
+capiti	T-E36	0.8
+capiti	T-E37	0.4
+capiti	T-E38	0.1
+capiti	T-E39	0.3
+capiti	T-E4	0.2
+capiti	T-E40	0.1
+capiti	T-E41	0.1
+capiti	T-E42	0.3
+capiti	T-E43	0.2
+capiti	T-E44	0.9
+capiti	T-E45	0.2
+capiti	T-E46	0.4
+capiti	T-E47	1.0
+capiti	T-E48	0.6
+capiti	T-E49	0.8
+capiti	T-E5	0.3
+capiti	T-E50	0.1
+capiti	T-E51	0.3
+capiti	T-E53	0.5
+capiti	T-E54	0.6
+capiti	T-E55	0.4
+capiti	T-E57	0.3
+capiti	T-E58	0.7
+capiti	T-E59	0.3
+capiti	T-E6	0.5
+capiti	T-E60	0.6
+capiti	T-E61	0.6
+capiti	T-E7	0.6
+capiti	T-E8	0.1
+capiti	T-E9	0.6
+kmer3_lr	T-E1	
+kmer3_lr	T-E10	0.7
+kmer3_lr	T-E11	
+kmer3_lr	T-E12	
+kmer3_lr	T-E13	
+kmer3_lr	T-E14	0.9
+kmer3_lr	T-E15	0.3
+kmer3_lr	T-E16	0.2
+kmer3_lr	T-E17	0.1
+kmer3_lr	T-E18	
+kmer3_lr	T-E19	
+kmer3_lr	T-E2	
+kmer3_lr	T-E20	0.7
+kmer3_lr	T-E21	0.6
+kmer3_lr	T-E22	0.3
+kmer3_lr	T-E23	0.4
+kmer3_lr	T-E24	0.9
+kmer3_lr	T-E25	
+kmer3_lr	T-E26	
+kmer3_lr	T-E27	
+kmer3_lr	T-E28	0.9
+kmer3_lr	T-E29	0.8
+kmer3_lr	T-E3	0.6
+kmer3_lr	T-E30	0.5
+kmer3_lr	T-E31	0.2
+kmer3_lr	T-E32	
+kmer3_lr	T-E33	0.9
+kmer3_lr	T-E34	
+kmer3_lr	T-E35	
+kmer3_lr	T-E36	
+kmer3_lr	T-E37	
+kmer3_lr	T-E38	0.3
+kmer3_lr	T-E39	
+kmer3_lr	T-E4	0.8
+kmer3_lr	T-E40	
+kmer3_lr	T-E41	0.7
+kmer3_lr	T-E42	0.9
+kmer3_lr	T-E43	0.6
+kmer3_lr	T-E44	
+kmer3_lr	T-E45	0.7
+kmer3_lr	T-E46	0.9
+kmer3_lr	T-E47	
+kmer3_lr	T-E48	0.6
+kmer3_lr	T-E49	
+kmer3_lr	T-E5	0.6
+kmer3_lr	T-E50	
+kmer3_lr	T-E51	0.2
+kmer3_lr	T-E53	0.7
+kmer3_lr	T-E54	
+kmer3_lr	T-E55	
+kmer3_lr	T-E57	0.7
+kmer3_lr	T-E58	
+kmer3_lr	T-E59	
+kmer3_lr	T-E6	0.9
+kmer3_lr	T-E60	
+kmer3_lr	T-E61	0.9
+kmer3_lr	T-E7	0.8
+kmer3_lr	T-E8	
+kmer3_lr	T-E9	

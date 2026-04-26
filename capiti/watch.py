@@ -75,7 +75,10 @@ def main(argv=None):
     # Inference
     ap.add_argument("--set", dest="set_name",
                     default=os.environ.get("CAPITI_SET", "ab9"),
-                    choices=AVAILABLE_SETS)
+                    choices=tuple(AVAILABLE_SETS) + ("any",),
+                    help="`any` loads every bundled set in parallel and "
+                         "fires when any one of them crosses threshold "
+                         "(env: CAPITI_SET)")
     ap.add_argument("--model", default=os.environ.get("CAPITI_MODEL"))
     ap.add_argument("--meta", default=os.environ.get("CAPITI_META"))
     # Streaming verdict
@@ -134,26 +137,60 @@ def main(argv=None):
             return 2
 
     import json
-    model_path = args.model or str(_bundled(args.set_name, "capiti.onnx"))
-    meta_path = args.meta or str(_bundled(args.set_name, "capiti.meta.json"))
-    if not os.path.exists(model_path):
-        sys.stderr.write(f"capiti-watch: model not bundled at {model_path}\n")
-        return 2
-    with open(meta_path) as fh:
-        meta = json.load(fh)
-    max_len = meta["max_len"]
-    aa_to_idx = meta["vocab"]
-    pad_idx = aa_to_idx.get("pad", 0)
-    labels = meta["labels"]
-    none_idx = meta["none_idx"]
 
     so = ort.SessionOptions()
     so.intra_op_num_threads = int(os.environ.get("CAPITI_THREADS", "1"))
     so.inter_op_num_threads = 1
     so.log_severity_level = int(os.environ.get("CAPITI_LOG_LEVEL", "3"))
-    sess = ort.InferenceSession(model_path, sess_options=so,
-                                 providers=["CPUExecutionProvider"])
-    inp_name = sess.get_inputs()[0].name
+
+    def _load_set(set_name, model_path=None, meta_path=None):
+        mp = model_path or str(_bundled(set_name, "capiti.onnx"))
+        mt = meta_path or str(_bundled(set_name, "capiti.meta.json"))
+        if not os.path.exists(mp) or not os.path.exists(mt):
+            return None
+        with open(mt) as fh:
+            m = json.load(fh)
+        s = ort.InferenceSession(mp, sess_options=so,
+                                  providers=["CPUExecutionProvider"])
+        return {
+            "name": set_name,
+            "session": s,
+            "input_name": s.get_inputs()[0].name,
+            "max_len": m["max_len"],
+            "aa_to_idx": m["vocab"],
+            "pad_idx": m["vocab"].get("pad", 0),
+            "labels": m["labels"],
+            "none_idx": m["none_idx"],
+            "consec_above": 0,
+        }
+
+    if args.set_name == "any":
+        sets = []
+        for name in AVAILABLE_SETS:
+            entry = _load_set(name)
+            if entry is None:
+                sys.stderr.write(
+                    f"capiti-watch: skipping set '{name}' (not bundled)\n")
+                continue
+            sets.append(entry)
+        if not sets:
+            sys.stderr.write("capiti-watch: no bundled sets found\n")
+            return 2
+    else:
+        entry = _load_set(args.set_name, args.model, args.meta)
+        if entry is None:
+            sys.stderr.write(
+                f"capiti-watch: model for set '{args.set_name}' is not "
+                f"bundled\n")
+            return 2
+        sets = [entry]
+
+    # All bundled sets share the same vocab + max_len (same student
+    # architecture, same encoder), so we can reuse a single encode
+    # buffer across them. Pin off the first set's values.
+    max_len = sets[0]["max_len"]
+    aa_to_idx = sets[0]["aa_to_idx"]
+    pad_idx = sets[0]["pad_idx"]
 
     if sim_mode:
         base_in = strobe = done_dev = interrupt_line = None
@@ -178,8 +215,8 @@ def main(argv=None):
         "next_codon_start": None,
         "translation_frozen": False,
         "last_score_at": 0,
-        "consec_above": 0,
         "triggered": False,
+        "fired_set": None,
     }
     out_fh = open(args.out, "a", buffering=1) if args.out else None
     done = threading.Event()
@@ -227,32 +264,54 @@ def main(argv=None):
             return
 
         x = np.asarray([encode_into(aa_chars)], dtype=np.int64)
-        logits = sess.run(None, {inp_name: x})[0]
-        probs = softmax(logits)[0]
-        p_inset = float(1.0 - probs[none_idx])
-        masked = probs.copy(); masked[none_idx] = -1.0
-        top_idx = int(masked.argmax())
-        top_label = labels[top_idx]
-
-        above = p_inset >= args.threshold
-        state["consec_above"] = state["consec_above"] + 1 if above else 0
-        will_fire = state["consec_above"] >= args.stability
+        # Score against every loaded set; fire on the first to reach
+        # the stability gate. With one set this collapses to the
+        # original single-set behavior.
+        per_set_lines = []
+        will_fire = False
+        firing_set = None
+        firing_top = None
+        firing_p = None
+        for s in sets:
+            logits = s["session"].run(None, {s["input_name"]: x})[0]
+            probs = softmax(logits)[0]
+            none_idx = s["none_idx"]
+            p_inset = float(1.0 - probs[none_idx])
+            masked = probs.copy(); masked[none_idx] = -1.0
+            top_idx = int(masked.argmax())
+            top_label = s["labels"][top_idx]
+            above = p_inset >= args.threshold
+            s["consec_above"] = s["consec_above"] + 1 if above else 0
+            tag = ("FIRE" if s["consec_above"] >= args.stability
+                   else ("HOT" if above else "ok"))
+            if s["consec_above"] >= args.stability and not will_fire:
+                will_fire = True
+                firing_set = s["name"]
+                firing_top = top_label
+                firing_p = p_inset
+            per_set_lines.append(
+                f"{s['name']}:{top_label}/p={p_inset:.3f}/"
+                f"r={s['consec_above']}/{tag}"
+            )
 
         if not args.quiet:
-            tag = ("FIRE" if will_fire
-                   else ("HOT" if above else "ok"))
             sys.stderr.write(
-                f"[K={K:3d} bases={n:4d} top={top_label} "
-                f"p={p_inset:.3f} run={state['consec_above']} {tag}]\n"
+                f"[K={K:3d} bases={n:4d} | "
+                + "  ".join(per_set_lines) + "]\n"
             )
             sys.stderr.flush()
 
         if will_fire:
             state["triggered"] = True
+            state["fired_set"] = firing_set
+            top_label = firing_top
+            p_inset = firing_p
             will_pulse = (interrupt_line is not None) and (not args.no_interrupt)
+            set_tag = (f"set={firing_set} "
+                       if len(sets) > 1 else "")
             sys.stderr.write(
-                f"capiti-watch: TRIGGER at K={K} (top={top_label}, "
-                f"p_inset={p_inset:.3f}); "
+                f"capiti-watch: TRIGGER at K={K} ({set_tag}"
+                f"top={top_label}, p_inset={p_inset:.3f}); "
                 f"{'firing interrupt' if will_pulse else 'no pulse (sim or dry run)'}\n"
             )
             if will_pulse:
@@ -292,8 +351,11 @@ def main(argv=None):
 
     src_label = ("sim" if sim_mode
                  else f"GPIO strobe={args.strobe}")
+    sets_label = (f"{args.set_name}=[{','.join(s['name'] for s in sets)}]"
+                  if args.set_name == "any"
+                  else args.set_name)
     sys.stderr.write(
-        f"capiti-watch: set={args.set_name} src={src_label} "
+        f"capiti-watch: set={sets_label} src={src_label} "
         f"threshold={args.threshold} min_k={args.min_k} "
         f"stability={args.stability} score_every={args.score_every}b "
         f"interrupt="
@@ -320,7 +382,9 @@ def main(argv=None):
         aa_chars.clear()
         state.update(atg_offset=None, next_codon_start=None,
                      translation_frozen=False, last_score_at=0,
-                     consec_above=0, triggered=False)
+                     triggered=False, fired_set=None)
+        for s in sets:
+            s["consec_above"] = 0
 
     try:
         if sim_mode:
@@ -342,10 +406,11 @@ def main(argv=None):
                 # so the user sees the ending verdict even if no
                 # rescoring boundary fell exactly at the last base.
                 maybe_score(force=True)
+                trig_msg = (f"TRIGGERED ({state['fired_set']})"
+                            if state['triggered'] else "no trigger")
                 sys.stderr.write(
                     f"capiti-watch[sim]: {name} -> "
-                    f"K={len(aa_chars)} "
-                    f"{'TRIGGERED' if state['triggered'] else 'no trigger'}\n"
+                    f"K={len(aa_chars)} {trig_msg}\n"
                 )
         else:
             done.wait()
@@ -361,10 +426,11 @@ def main(argv=None):
         if out_fh is not None:
             out_fh.close()
 
+    final_msg = (f"TRIGGERED ({state['fired_set']})"
+                 if state['triggered'] else "no trigger")
     sys.stderr.write(
         f"capiti-watch: stopped after {len(nt_chars)} bases, "
-        f"K={len(aa_chars)}, "
-        f"{'TRIGGERED' if state['triggered'] else 'no trigger'}\n"
+        f"K={len(aa_chars)}, {final_msg}\n"
     )
     return 0 if state["triggered"] else 1
 
