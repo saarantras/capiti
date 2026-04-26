@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "capiti"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tiny protein-function classifier distilled from ProteinMPNN, for edge deployment."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -42,6 +42,7 @@ Homepage = "https://github.com/mcnoonz/capiti"
 capiti = "capiti.cli:main"
 capiti-interrupt = "capiti.interrupt:main"
 capiti-listen = "capiti.listen:main"
+capiti-watch = "capiti.watch:main"
 capiti-orf = "capiti.seq:orf_main"
 capiti-translate = "capiti.seq:translate_main"
 
@@ -53,4 +54,4 @@ include = ["capiti*"]
 exclude = ["src*", "tests*", "third_party*", "scripts*", "data*", "notebooks*", "configs*", "logs*"]
 
 [tool.setuptools.package-data]
-capiti = ["_model/*/*.onnx", "_model/*/*.json", "_model/*/README.md", "_model/*/gate.json"]
+capiti = ["_model/*/*.onnx", "_model/*/*.json", "_model/*/README.md", "_model/*/gate.json", "_model/*/*.tsv"]

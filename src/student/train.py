@@ -87,11 +87,18 @@ def row_aux_mask(row, per_target_masks, max_len):
 
 
 class CapitiDataset(Dataset):
-    def __init__(self, rows, max_len, label_to_idx, per_target_masks=None):
+    def __init__(self, rows, max_len, label_to_idx, per_target_masks=None,
+                 prefix_aug=False, prefix_min_frac=0.40,
+                 prefix_keep_full=0.50, prefix_bias="uniform"):
         self.rows = rows
         self.max_len = max_len
         self.label_to_idx = label_to_idx
         self.per_target_masks = per_target_masks  # None -> no aux
+        self.prefix_aug = prefix_aug
+        self.prefix_min_frac = prefix_min_frac
+        self.prefix_keep_full = prefix_keep_full
+        assert prefix_bias in ("uniform", "short")
+        self.prefix_bias = prefix_bias
         # pre-compute masks to avoid per-worker JSON reads
         if per_target_masks is not None:
             self._cached = [row_aux_mask(r, per_target_masks, max_len)
@@ -104,10 +111,28 @@ class CapitiDataset(Dataset):
 
     def __getitem__(self, i):
         r = self.rows[i]
-        ids = torch.tensor(encode(r["seq"], self.max_len), dtype=torch.long)
+        seq = r["seq"]
+        if self.prefix_aug and torch.rand(()).item() > self.prefix_keep_full:
+            L = len(seq)
+            lo = max(1, int(L * self.prefix_min_frac))
+            if self.prefix_bias == "short":
+                # K = lo + (L - lo) * U^2 skews uniform U toward 0,
+                # so the truncation length sits closer to `lo`. Still
+                # covers full length when U is near 1.
+                u = torch.rand(()).item()
+                keep = int(lo + (L - lo) * (u * u))
+                keep = max(lo, min(L, keep))
+            else:
+                keep = int(torch.randint(lo, L + 1, ()).item())
+            seq = seq[:keep]
+        ids = torch.tensor(encode(seq, self.max_len), dtype=torch.long)
         y = torch.tensor(self.label_to_idx[r["target"]], dtype=torch.long)
         if self._cached is None:
             return ids, y
+        # The cached aux mask is on the full-length sequence. After
+        # truncation, positions past `keep` are encoded as PAD, so the
+        # train loop's pad_mask zeros them out of the BCE loss without
+        # any extra work here.
         mask, use_aux = self._cached[i]
         return ids, y, mask, torch.tensor(use_aux, dtype=torch.bool)
 
@@ -234,6 +259,22 @@ def main():
                          "BCE loss with this weight (training-time regulariser)")
     ap.add_argument("--residue-maps", default="data/targets/residue_maps")
     ap.add_argument("--active-sites", default="data/targets/active_sites")
+    ap.add_argument("--prefix-aug", action="store_true",
+                    help="randomly truncate training sequences to a "
+                         "prefix so the model emits length-aware scores "
+                         "for streaming inference. Train-only; val/test "
+                         "stay full-length.")
+    ap.add_argument("--prefix-min-frac", type=float, default=0.40,
+                    help="shortest prefix (as fraction of full length) "
+                         "the model is shown when --prefix-aug is on")
+    ap.add_argument("--prefix-keep-full", type=float, default=0.50,
+                    help="probability a training step keeps the full seq "
+                         "(rest are randomly truncated)")
+    ap.add_argument("--prefix-bias", choices=("uniform", "short"),
+                    default="uniform",
+                    help="`short` skews the prefix-length distribution "
+                         "toward shorter prefixes (K = lo + (L-lo)*U^2); "
+                         "spends more capacity on the harder bins")
     args = ap.parse_args()
 
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
@@ -258,7 +299,11 @@ def main():
         args.residue_maps, args.active_sites, args.max_len, targets)
         if use_aux else None)
     train_ds = CapitiDataset(train_rows, args.max_len, label_to_idx,
-                              per_target_masks)
+                              per_target_masks,
+                              prefix_aug=args.prefix_aug,
+                              prefix_min_frac=args.prefix_min_frac,
+                              prefix_keep_full=args.prefix_keep_full,
+                              prefix_bias=args.prefix_bias)
     val_ds   = CapitiDataset(val_rows, args.max_len, label_to_idx)
     test_ds  = CapitiDataset(test_rows, args.max_len, label_to_idx)
 
@@ -287,7 +332,11 @@ def main():
     # persist labels so export_onnx / inference know the class index map
     (out / "labels.json").write_text(json.dumps(
         {"labels": labels, "none_idx": none_idx, "pool": args.pool,
-         "channels": args.channels, "max_len": args.max_len}, indent=2))
+         "channels": args.channels, "max_len": args.max_len,
+         "prefix_aug": bool(args.prefix_aug),
+         "prefix_min_frac": args.prefix_min_frac,
+         "prefix_keep_full": args.prefix_keep_full,
+         "prefix_bias": args.prefix_bias}, indent=2))
     history = []
     best_val_auc = -1.0
     for ep in range(args.epochs):

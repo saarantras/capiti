@@ -146,6 +146,11 @@ def main():
     ap.add_argument("--gate-conf", type=float, default=0.2,
                     help="min prob on predicted target for the gate to "
                          "trigger (low-conf rows passed through)")
+    ap.add_argument("--prefix-frac", type=float, default=1.0,
+                    help="if <1.0, truncate every eval seq to "
+                         "int(frac * len(seq)) before scoring. Used by "
+                         "the streaming-inference prefix sweep to "
+                         "measure per-class TPR/FPR vs prefix length.")
     args = ap.parse_args()
 
     out = Path(args.out_dir)
@@ -156,6 +161,25 @@ def main():
     eval_rows = [r for r in rows if r["split"] == args.split]
     print(f"[benchmark] train={len(train)} {args.split}={len(eval_rows)}",
           file=sys.stderr)
+
+    if args.prefix_frac < 1.0:
+        # Truncate eval seqs in place for the streaming-prefix sweep.
+        # Train rows are left intact: the kmer_lr classifier is fit on
+        # full-length training data and queried with truncated test
+        # rows, mirroring the deployed streaming setup. BLAST short
+        # prefixes that miss the seed return no hit -> score 0, which
+        # is what we want.
+        frac = args.prefix_frac
+        trunc = []
+        for r in eval_rows:
+            r2 = dict(r)
+            L = len(r2["seq"])
+            keep = max(1, int(L * frac))
+            r2["seq"] = r2["seq"][:keep]
+            trunc.append(r2)
+        eval_rows = trunc
+        print(f"[benchmark] prefix-frac={frac}: truncated {len(eval_rows)} "
+              f"eval rows", file=sys.stderr)
 
     target_seqs = _s.load_targets(args.targets)
 
@@ -222,7 +246,10 @@ def main():
                   for m in method_order}
     metrics = {m: summarize(base[m].to_numpy(), eval_rows, thresholds[m])
                for m in method_order}
-    (out / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    metrics_out = dict(metrics)
+    metrics_out["_meta"] = {"prefix_frac": args.prefix_frac,
+                             "fpr_target": args.fpr}
+    (out / "metrics.json").write_text(json.dumps(metrics_out, indent=2))
     (out / "thresholds.json").write_text(json.dumps(thresholds, indent=2))
 
     write_markdown_report(metrics, CLASS_ORDER, out / "report.md", args.fpr)

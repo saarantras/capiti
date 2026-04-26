@@ -1,0 +1,28 @@
+method	target	min_prefix_for_tpr
+blast_nearest_wt	T1	
+blast_nearest_wt	T2	
+blast_nearest_wt	T3	
+blast_nearest_wt	T4	
+blast_nearest_wt	T5	
+blast_nearest_wt	T6	
+blast_nearest_wt	T7	
+blast_nearest_wt	T8	
+blast_nearest_wt	T9	
+capiti	T1	0.4
+capiti	T2	0.4
+capiti	T3	0.3
+capiti	T4	0.2
+capiti	T5	0.4
+capiti	T6	0.3
+capiti	T7	0.4
+capiti	T8	0.1
+capiti	T9	0.2
+kmer3_lr	T1	0.9
+kmer3_lr	T2	0.3
+kmer3_lr	T3	0.2
+kmer3_lr	T4	0.2
+kmer3_lr	T5	0.7
+kmer3_lr	T6	0.2
+kmer3_lr	T7	0.4
+kmer3_lr	T8	0.2
+kmer3_lr	T9	0.4

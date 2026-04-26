@@ -1,5 +1,5 @@
 {
-  "max_len": 800,
+  "max_len": 1200,
   "vocab": {
     "pad": 0,
     "A": 1,
