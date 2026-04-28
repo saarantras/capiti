@@ -9,7 +9,7 @@ Weighs ~1 MB on disk, runs inference in tens of milliseconds on a
 Raspberry Pi. Trained by distilling ProteinMPNN's function-preserving
 design prior into a small 1D CNN. Bundled console scripts cover both
 batch validation (`capiti`, `capiti-orf`, `capiti-translate`) and
-real-time streaming during DNA synthesis on a Pi
+real-time streaming during DNA synthesis
 (`capiti-listen`, `capiti-watch`, `capiti-interrupt`).
 
 **Overview** (each ResidualDilatedBlock collapsed to one box):
