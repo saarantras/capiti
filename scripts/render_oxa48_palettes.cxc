@@ -1,0 +1,46 @@
+# OXA-48 overlay rendered in 5 colour pairings (WT opaque / 15 designs translucent).
+# scripts/render_oxa48_palettes.sh prepends the `open` line; paths are under
+# data/oracle_folds/oxa48_poster/ .
+
+matchmaker #2-17 to #1
+set bgColor white
+lighting soft
+graphics silhouettes true
+hide atoms
+dssp #1-17
+show cartoon
+hide #1 models
+
+cartoon style #3-17 thickness 0.4 width 1.0
+transparency #3-17 60 target c
+cartoon style #2 thickness 0.7 width 1.6
+transparency #2 0 target c
+view #2-17
+zoom 1.3
+
+# pairing 1: cyan WT / red designs
+color #2 cyan
+color #3-17 red
+save PALDIR/oxa48_pair1_cyan_red.png width 3200 height 2600 supersample 3
+
+# pairing 2: gold WT / red designs
+color #2 gold
+color #3-17 red
+save PALDIR/oxa48_pair2_gold_red.png width 3200 height 2600 supersample 3
+
+# pairing 3: navy WT / red designs
+color #2 navy
+color #3-17 red
+save PALDIR/oxa48_pair3_navy_red.png width 3200 height 2600 supersample 3
+
+# pairing 4: cornflower blue WT / grey designs
+color #2 cornflower blue
+color #3-17 gray
+save PALDIR/oxa48_pair4_blue_grey.png width 3200 height 2600 supersample 3
+
+# pairing 5: teal WT / coral designs
+color #2 teal
+color #3-17 coral
+save PALDIR/oxa48_pair5_teal_coral.png width 3200 height 2600 supersample 3
+
+exit
